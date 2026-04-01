@@ -5,6 +5,7 @@ import { clearSessionCookie, setSessionCookie } from "../../lib/cookies.js";
 import { requireAuth } from "../../middleware/require-auth.js";
 import { upsertSteamUser } from "./auth.service.js";
 import { config } from "../../config.js";
+import { db } from "../../db.js";
 
 const router = Router();
 
@@ -66,6 +67,49 @@ router.post("/logout", requireAuth, async (req, res, next) => {
 
     return res.status(200).json({
       ok: true,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/profiles/:steamId", async (req, res, next) => {
+  try {
+    const { steamId } = req.params;
+
+    const result = await db.query(
+      `
+      SELECT
+        steam_id,
+        persona_name,
+        avatar_small,
+        avatar_medium,
+        avatar_large,
+        created_at
+      FROM users
+      WHERE steam_id = $1
+      LIMIT 1
+      `,
+      [steamId],
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      profile: {
+        steamId: user.steam_id,
+        personaName: user.persona_name,
+        avatarSmall: user.avatar_small,
+        avatarMedium: user.avatar_medium,
+        avatarLarge: user.avatar_large,
+        createdAt: user.created_at,
+      },
     });
   } catch (error) {
     return next(error);

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { MdBadge, MdSettings, MdLogout } from "react-icons/md";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../Button";
 import { Dropdown } from "../Dropdown";
 import type { NavbarProps } from "./types";
 import { useAuth } from "../../auth/useAuth";
+import { Skeleton } from "../Skeleton";
 
 function DropdownLink({
   to,
@@ -29,7 +30,8 @@ function DropdownLink({
   );
 }
 
-export function Navbar({ Logo }: NavbarProps) {
+export function Navbar({ Logo, isInQueue }: NavbarProps) {
+  const navigate = useNavigate();
   const { user, isSignedIn, isLoading, signIn, signOut } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -76,6 +78,7 @@ export function Navbar({ Logo }: NavbarProps) {
   async function handleSignOut() {
     setIsPinned(false);
     setIsOpen(false);
+    navigate("/");
     await signOut();
   }
 
@@ -100,20 +103,23 @@ export function Navbar({ Logo }: NavbarProps) {
 
   return (
     <div className="fixed left-0 top-0 right-0 grid w-full place-items-center p-6">
-      <div className="relative w-full max-w-lg">
+      <div
+        className={`relative w-full transition-all duration-100 ${isInQueue ? "max-w-xl" : "max-w-2xl"}`}
+      >
         <nav className="flex justify-between rounded-full border border-lavender/20 bg-black/10 p-2">
-          <Link to="/">
-            <Button variant="ghost">
-              <Logo />
-            </Button>
-          </Link>
+          <Button href="/" variant="ghost">
+            <Logo />
+          </Button>
 
           {isLoading ? (
-            <Button disabled className="opacity-60">
-              Loading...
-            </Button>
+            <div className="flex items-center gap-2 rounded-full px-4 py-2">
+              <Skeleton circle className="h-7 w-7" />
+              <Skeleton className="h-4 w-20 rounded-full" />
+            </div>
           ) : !isSignedIn ? (
-            <Button onClick={signIn}>Sign in with Steam</Button>
+            <Button variant="solid" onClick={signIn}>
+              Sign in
+            </Button>
           ) : (
             <div
               ref={accountAreaRef}
@@ -126,10 +132,10 @@ export function Navbar({ Logo }: NavbarProps) {
                 onClick={handleTriggerClick}
                 className="px-4"
               >
-                <div className="flex items-center gap-2">
-                  {user?.avatarMedium ? (
+                <>
+                  {user?.avatarSmall ? (
                     <img
-                      src={user.avatarMedium}
+                      src={user.avatarSmall}
                       alt={user.personaName ?? "User avatar"}
                       className="h-7 w-7 rounded-full"
                     />
@@ -137,7 +143,7 @@ export function Navbar({ Logo }: NavbarProps) {
                   <span className="max-w-32 truncate text-sm">
                     {user?.personaName ?? "Account"}
                   </span>
-                </div>
+                </>
               </Button>
 
               <div
@@ -147,7 +153,7 @@ export function Navbar({ Logo }: NavbarProps) {
               >
                 <Dropdown isOpen={isOpen}>
                   <DropdownLink
-                    to="/profile"
+                    to={user?.steamId ? `/profile/${user.steamId}` : "/profile"}
                     icon={<MdBadge />}
                     onClick={() => {
                       setIsPinned(false);

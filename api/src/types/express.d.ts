@@ -6,7 +6,9 @@ declare global {
       id: string;
       steamId: string;
       personaName: string | null;
+      avatarSmall: string | null;
       avatarMedium: string | null;
+      avatarLarge: string | null;
     }
 
     interface Request {

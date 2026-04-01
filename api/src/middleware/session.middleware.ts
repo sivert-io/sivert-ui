@@ -25,7 +25,9 @@ export async function sessionMiddleware(
       id: session.user_id,
       steamId: session.steam_id,
       personaName: session.persona_name,
+      avatarSmall: session.avatar_small,
       avatarMedium: session.avatar_medium,
+      avatarLarge: session.avatar_large,
     };
 
     return next();

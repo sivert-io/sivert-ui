@@ -45,7 +45,7 @@ export function Button({
   type = "button",
   ...props
 }: Props) {
-  const classes = `${baseStyles} ${styles[variant][color]} ${
+  const classes = `font-medium flex items-center gap-2 ${baseStyles} ${styles[variant][color]} ${
     square ? "p-3" : "px-4 py-2"
   } ${className}`;
 

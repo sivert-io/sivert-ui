@@ -64,7 +64,9 @@ export async function getSessionWithUser(sessionId: string) {
         s.user_id,
         u.steam_id,
         u.persona_name,
-        u.avatar_medium
+        u.avatar_small,
+        u.avatar_medium,
+        u.avatar_large
       FROM sessions s
       INNER JOIN users u ON u.id = s.user_id
       WHERE
