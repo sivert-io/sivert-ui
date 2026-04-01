@@ -12,7 +12,7 @@ function AppLayout() {
   return (
     <>
       <Navbar Logo={Logo} />
-      <div className="py-6">
+      <div className="py-24">
         <Outlet />
       </div>
     </>

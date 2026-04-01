@@ -35,7 +35,7 @@ export function Navbar({ Logo }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const accountAreaRef = useRef<HTMLDivElement | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
 
   function clearCloseTimeout() {
@@ -81,9 +81,9 @@ export function Navbar({ Logo }: NavbarProps) {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (!dropdownRef.current) return;
+      if (!accountAreaRef.current) return;
 
-      if (!dropdownRef.current.contains(event.target as Node)) {
+      if (!accountAreaRef.current.contains(event.target as Node)) {
         clearCloseTimeout();
         setIsPinned(false);
         setIsOpen(false);
@@ -99,82 +99,90 @@ export function Navbar({ Logo }: NavbarProps) {
   }, []);
 
   return (
-    <div className="grid w-full place-items-center p-6">
-      <nav className="flex w-full max-w-lg items-center justify-between rounded-full border border-lavender/20 bg-black/10 p-2 backdrop-blur-lg">
-        <Link to="/">
-          <Button variant="ghost">
-            <Logo />
-          </Button>
-        </Link>
-
-        {isLoading ? (
-          <Button disabled className="opacity-60">
-            Loading...
-          </Button>
-        ) : !isSignedIn ? (
-          <Button onClick={signIn}>Sign in with Steam</Button>
-        ) : (
-          <div
-            ref={dropdownRef}
-            className="relative"
-            onMouseEnter={openDropdown}
-            onMouseLeave={scheduleClose}
-          >
-            <Button
-              variant="ghost"
-              onClick={handleTriggerClick}
-              className="px-4"
-            >
-              <div className="flex items-center gap-2">
-                {user?.avatarMedium ? (
-                  <img
-                    src={user.avatarMedium}
-                    alt={user.personaName ?? "User avatar"}
-                    className="h-7 w-7 rounded-full"
-                  />
-                ) : null}
-                <span className="max-w-32 truncate text-sm">
-                  {user?.personaName ?? "Account"}
-                </span>
-              </div>
+    <div className="fixed left-0 top-0 right-0 grid w-full place-items-center p-6">
+      <div className="relative w-full max-w-lg">
+        <nav className="flex justify-between rounded-full border border-lavender/20 bg-black/10 p-2">
+          <Link to="/">
+            <Button variant="ghost">
+              <Logo />
             </Button>
+          </Link>
 
-            <Dropdown isOpen={isOpen}>
-              <DropdownLink
-                to="/profile"
-                icon={<MdBadge />}
-                onClick={() => {
-                  setIsPinned(false);
-                  setIsOpen(false);
-                }}
+          {isLoading ? (
+            <Button disabled className="opacity-60">
+              Loading...
+            </Button>
+          ) : !isSignedIn ? (
+            <Button onClick={signIn}>Sign in with Steam</Button>
+          ) : (
+            <div
+              ref={accountAreaRef}
+              className="relative"
+              onMouseEnter={openDropdown}
+              onMouseLeave={scheduleClose}
+            >
+              <Button
+                variant="ghost"
+                onClick={handleTriggerClick}
+                className="px-4"
               >
-                My profile
-              </DropdownLink>
+                <div className="flex items-center gap-2">
+                  {user?.avatarMedium ? (
+                    <img
+                      src={user.avatarMedium}
+                      alt={user.personaName ?? "User avatar"}
+                      className="h-7 w-7 rounded-full"
+                    />
+                  ) : null}
+                  <span className="max-w-32 truncate text-sm">
+                    {user?.personaName ?? "Account"}
+                  </span>
+                </div>
+              </Button>
 
-              <DropdownLink
-                to="/settings"
-                icon={<MdSettings />}
-                onClick={() => {
-                  setIsPinned(false);
-                  setIsOpen(false);
-                }}
+              <div
+                className={`absolute right-0 top-full z-50 mt-2 ${
+                  isOpen ? "pointer-events-auto" : "pointer-events-none"
+                }`}
               >
-                Settings
-              </DropdownLink>
+                <Dropdown isOpen={isOpen}>
+                  <DropdownLink
+                    to="/profile"
+                    icon={<MdBadge />}
+                    onClick={() => {
+                      setIsPinned(false);
+                      setIsOpen(false);
+                    }}
+                  >
+                    My profile
+                  </DropdownLink>
 
-              <button
-                onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-lavender transition hover:bg-white/10"
-              >
-                <span className="text-lg">
-                  <MdLogout />
-                </span>
-                <span>Sign out</span>
-              </button>
-            </Dropdown>
-          </div>
-        )}
-      </nav>
+                  <DropdownLink
+                    to="/settings"
+                    icon={<MdSettings />}
+                    onClick={() => {
+                      setIsPinned(false);
+                      setIsOpen(false);
+                    }}
+                  >
+                    Settings
+                  </DropdownLink>
+
+                  <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-lavender transition hover:bg-white/10"
+                  >
+                    <span className="text-lg">
+                      <MdLogout />
+                    </span>
+                    <span>Sign out</span>
+                  </button>
+                </Dropdown>
+              </div>
+            </div>
+          )}
+        </nav>
+      </div>
     </div>
   );
 }
