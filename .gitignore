@@ -19,14 +19,14 @@ lerna-debug.log*
 **/.vite
 
 # TypeScript
-*.tsbuildinfo
+**/*.tsbuildinfo
 
-# Environment files
+# Environment
 **/.env
 **/.env.*
 !**/.env.example
 
-# Editor / OS files
+# Editor / OS
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -38,17 +38,10 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Yarn Berry / Yarn 4
+# Yarn / PnP
+**/.yarn
+**/.yarn/**
 **/.pnp.*
-**/.yarn/*
-!**/.yarn/patches
-!**/.yarn/plugins
-!**/.yarn/releases
-!**/.yarn/sdks
-!**/.yarn/versions
-
-# Optional: ignore cache too if you are NOT using zero-installs
-**/.yarn/cache
 
 # Coverage
 **/coverage
