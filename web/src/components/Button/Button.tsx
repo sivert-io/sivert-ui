@@ -1,9 +1,9 @@
 import type React from "react";
-import type { ButtonColor, ButtonProps, ButtonVariant } from "./types";
 import { Link } from "react-router";
+import type { ButtonColor, ButtonProps, ButtonVariant } from "./types";
 
 const baseStyles =
-  "rounded-full transform-gpu transition-transform duration-100 ease-out active:scale-[0.9]";
+  "rounded-full transform-gpu transition-transform duration-100 ease-out active:scale-[0.9] disabled:cursor-not-allowed disabled:opacity-50";
 
 const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
   solid: {
@@ -15,12 +15,12 @@ const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
     black: "bg-black text-white",
   },
   outline: {
-    primary: "bg-transparent text-lavender border border-lavender",
-    secondary: "bg-transparent text-thistle border border-thistle",
-    danger: "bg-transparent text-red-600 border border-red-600",
-    warning: "bg-transparent text-yellow-400 border border-yellow-400",
-    white: "bg-transparent text-white border border-white",
-    black: "bg-transparent text-black border border-black",
+    primary: "border border-lavender bg-transparent text-lavender",
+    secondary: "border border-thistle bg-transparent text-thistle",
+    danger: "border border-red-600 bg-transparent text-red-600",
+    warning: "border border-yellow-400 bg-transparent text-yellow-400",
+    white: "border border-white bg-transparent text-white",
+    black: "border border-black bg-transparent text-black",
   },
   ghost: {
     primary: "bg-transparent text-lavender hover:bg-lavender/10",
@@ -33,7 +33,6 @@ const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
 };
 
 type NativeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
-
 type Props = ButtonProps & NativeButtonProps;
 
 export function Button({

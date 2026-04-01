@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { MdPerson2, MdBadge, MdSettings, MdLogout } from "react-icons/md";
+import { MdBadge, MdSettings, MdLogout } from "react-icons/md";
 import { Link } from "react-router";
 import { Button } from "../Button";
 import { Dropdown } from "../Dropdown";
 import type { NavbarProps } from "./types";
+import { useAuth } from "../../auth/useAuth";
 
 function DropdownLink({
   to,
@@ -29,6 +30,8 @@ function DropdownLink({
 }
 
 export function Navbar({ Logo }: NavbarProps) {
+  const { user, isSignedIn, isLoading, signIn, signOut } = useAuth();
+
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
@@ -70,6 +73,12 @@ export function Navbar({ Logo }: NavbarProps) {
     setIsOpen(true);
   }
 
+  async function handleSignOut() {
+    setIsPinned(false);
+    setIsOpen(false);
+    await signOut();
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (!dropdownRef.current) return;
@@ -91,61 +100,80 @@ export function Navbar({ Logo }: NavbarProps) {
 
   return (
     <div className="grid w-full place-items-center p-6">
-      <nav className="flex w-full max-w-lg justify-between rounded-full border border-lavender/20 bg-black/10 p-2 backdrop-blur-lg">
+      <nav className="flex w-full max-w-lg items-center justify-between rounded-full border border-lavender/20 bg-black/10 p-2 backdrop-blur-lg">
         <Link to="/">
           <Button variant="ghost">
             <Logo />
           </Button>
         </Link>
 
-        <div
-          ref={dropdownRef}
-          className="relative"
-          onMouseEnter={openDropdown}
-          onMouseLeave={scheduleClose}
-        >
-          <Button square variant="ghost" onClick={handleTriggerClick}>
-            <MdPerson2 />
+        {isLoading ? (
+          <Button disabled className="opacity-60">
+            Loading...
           </Button>
-
-          <Dropdown isOpen={isOpen}>
-            <DropdownLink
-              to="/profile"
-              icon={<MdBadge />}
-              onClick={() => {
-                setIsPinned(false);
-                setIsOpen(false);
-              }}
+        ) : !isSignedIn ? (
+          <Button onClick={signIn}>Sign in with Steam</Button>
+        ) : (
+          <div
+            ref={dropdownRef}
+            className="relative"
+            onMouseEnter={openDropdown}
+            onMouseLeave={scheduleClose}
+          >
+            <Button
+              variant="ghost"
+              onClick={handleTriggerClick}
+              className="px-4"
             >
-              My profile
-            </DropdownLink>
+              <div className="flex items-center gap-2">
+                {user?.avatarMedium ? (
+                  <img
+                    src={user.avatarMedium}
+                    alt={user.personaName ?? "User avatar"}
+                    className="h-7 w-7 rounded-full"
+                  />
+                ) : null}
+                <span className="max-w-32 truncate text-sm">
+                  {user?.personaName ?? "Account"}
+                </span>
+              </div>
+            </Button>
 
-            <DropdownLink
-              to="/settings"
-              icon={<MdSettings />}
-              onClick={() => {
-                setIsPinned(false);
-                setIsOpen(false);
-              }}
-            >
-              Settings
-            </DropdownLink>
+            <Dropdown isOpen={isOpen}>
+              <DropdownLink
+                to="/profile"
+                icon={<MdBadge />}
+                onClick={() => {
+                  setIsPinned(false);
+                  setIsOpen(false);
+                }}
+              >
+                My profile
+              </DropdownLink>
 
-            <button
-              onClick={() => {
-                setIsPinned(false);
-                setIsOpen(false);
-                console.log("sign out");
-              }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-lavender transition hover:bg-white/10"
-            >
-              <span className="text-lg">
-                <MdLogout />
-              </span>
-              <span>Sign out</span>
-            </button>
-          </Dropdown>
-        </div>
+              <DropdownLink
+                to="/settings"
+                icon={<MdSettings />}
+                onClick={() => {
+                  setIsPinned(false);
+                  setIsOpen(false);
+                }}
+              >
+                Settings
+              </DropdownLink>
+
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-lavender transition hover:bg-white/10"
+              >
+                <span className="text-lg">
+                  <MdLogout />
+                </span>
+                <span>Sign out</span>
+              </button>
+            </Dropdown>
+          </div>
+        )}
       </nav>
     </div>
   );
