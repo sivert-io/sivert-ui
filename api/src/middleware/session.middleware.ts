@@ -1,0 +1,35 @@
+import type { NextFunction, Request, Response } from "express";
+import { config } from "../config.js";
+import { getSessionWithUser } from "../lib/sessions.js";
+
+export async function sessionMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) {
+  try {
+    const sessionId = req.cookies?.[config.SESSION_COOKIE_NAME];
+
+    if (!sessionId) {
+      return next();
+    }
+
+    const session = await getSessionWithUser(sessionId);
+
+    if (!session) {
+      return next();
+    }
+
+    req.sessionId = session.session_id;
+    req.user = {
+      id: session.user_id,
+      steamId: session.steam_id,
+      personaName: session.persona_name,
+      avatarMedium: session.avatar_medium,
+    };
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}

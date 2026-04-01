@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Lilex:ital,wght@0,100..700;1,100..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-background: #262626;
+  --color-rose: #a2666f;
+  --color-lavender: #e3d3e4;
+  --color-thistle: #e5cedc;
+
+  --font-sans: "Lilex", monospace;
+  --font-mono: "Lilex", monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+button {
+  cursor: pointer;
+}
