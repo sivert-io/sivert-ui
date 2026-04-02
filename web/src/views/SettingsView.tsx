@@ -25,7 +25,7 @@ export function SettingsView() {
                   overall performance in those matches, download replays of your
                   matches, and analyze your gameplay.
                 </p>
-                <p className=" text-rose">
+                <p className=" text-primary">
                   <strong>We use them to determine your ELO.</strong>
                 </p>
                 <Link

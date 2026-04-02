@@ -4,9 +4,8 @@
 @theme {
   --color-background: #201113;
   --color-surface: #58262E;
-  --color-rose: #a2666f;
-  --color-lavender: #D9A6AE;
-  --color-thistle: #e5cedc;
+  --color-primary: #D9A6AE;
+  --color-secondary: #AEA6D9;
 
   --font-sans: "Lilex", monospace;
   --font-mono: "Lilex", monospace;

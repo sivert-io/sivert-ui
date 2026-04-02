@@ -9,7 +9,7 @@ export function Accordion({ children, label }: AccordionProps) {
       style={{
         interpolateSize: "allow-keywords",
       }}
-      className={`transition-all duration-100 overflow-hidden flex flex-col gap-2 bg-black/20 border-lavender/20 border rounded-3xl ${isOpen ? "h-auto" : "h-11"}`}
+      className={`transition-all duration-100 overflow-hidden flex flex-col gap-2 bg-black/20 border-primary/20 border rounded-3xl ${isOpen ? "h-auto" : "h-11"}`}
     >
       <button
         onClick={() => {

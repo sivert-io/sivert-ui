@@ -114,7 +114,7 @@ export function ProfileView() {
     return (
       <Card>
         <h1 className="mb-4 text-2xl font-bold">Player not found</h1>
-        <p className="text-lavender/70">
+        <p className="text-primary/70">
           No player exists with Steam ID{" "}
           <span className="font-mono">{steamId}</span>.
         </p>
@@ -126,7 +126,7 @@ export function ProfileView() {
     return (
       <Card>
         <h1 className="mb-4 text-2xl font-bold">Something went wrong</h1>
-        <p className="text-lavender/70">
+        <p className="text-primary/70">
           We could not load this profile right now.
         </p>
       </Card>
@@ -158,7 +158,7 @@ export function ProfileView() {
               </h1>
               <Rank rank={user?.rank || undefined} />
             </div>
-            <p className="text-xs font-medium text-lavender/70">
+            <p className="text-xs font-medium text-primary/70">
               Joined:{" "}
               {new Date(profile.createdAt).toLocaleString("en-GB", {
                 dateStyle: "long",

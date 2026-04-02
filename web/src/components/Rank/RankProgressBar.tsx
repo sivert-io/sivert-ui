@@ -22,7 +22,7 @@ export function RankProgressBar({ rank }: RankProgressBarProps) {
 
   return (
     <div className="mt-3 w-full">
-      <div className="mb-1 flex items-center justify-between text-xs text-lavender/70">
+      <div className="mb-1 flex items-center justify-between text-xs text-primary/70">
         <span className={"capitalize " + currentStyle.fillClassName}>
           {progress.currentTier} · {progress.stage}
         </span>
@@ -42,7 +42,7 @@ export function RankProgressBar({ rank }: RankProgressBarProps) {
         />
       </div>
 
-      <div className="mt-1 flex items-center justify-between text-xs text-lavender/60">
+      <div className="mt-1 flex items-center justify-between text-xs text-primary/60">
         <span>{formatRankValue(progress.rank)} points</span>
         <span>
           {progress.isMaxStage

@@ -23,7 +23,7 @@ function DropdownLink({
     <Link
       to={to}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-lavender transition hover:bg-white/10"
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-primary transition hover:bg-white/10"
     >
       <span>{icon}</span>
       <span>{children}</span>
@@ -107,7 +107,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
       <div
         className={`relative w-full transition-all duration-100 ${isInQueue ? "max-w-xl" : "max-w-2xl"}`}
       >
-        <nav className="flex justify-between rounded-full border border-lavender/20 bg-black/10 p-2">
+        <nav className="flex justify-between rounded-full border border-primary/20 bg-black/10 p-2">
           <Button href="/" variant="ghost">
             <Logo />
           </Button>
@@ -143,7 +143,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                   ) : null}
                   <span
                     className={`max-w-32 truncate text-sm " ${
-                      user?.role === "admin" ? "text-purple-400" : ""
+                      user?.role === "admin" ? "text-secondary" : ""
                     }`}
                   >
                     {user?.personaName ?? "Account"}
@@ -179,7 +179,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                     Settings
                   </DropdownLink>
 
-                  <Divider className="border-lavender/20" />
+                  <Divider className="border-primary/20" />
 
                   <button
                     onClick={handleSignOut}

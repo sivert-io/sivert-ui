@@ -7,24 +7,24 @@ const baseStyles =
 
 const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
   solid: {
-    primary: "bg-lavender text-black",
-    secondary: "bg-thistle text-white",
+    primary: "bg-primary text-black",
+    secondary: "bg-secondary text-white",
     danger: "bg-red-600 text-white",
     warning: "bg-yellow-400 text-black",
     white: "bg-white text-black",
     black: "bg-black text-white",
   },
   outline: {
-    primary: "border border-lavender bg-transparent text-lavender",
-    secondary: "border border-thistle bg-transparent text-thistle",
+    primary: "border border-primary bg-transparent text-primary",
+    secondary: "border border-secondary bg-transparent text-secondary",
     danger: "border border-red-600 bg-transparent text-red-600",
     warning: "border border-yellow-400 bg-transparent text-yellow-400",
     white: "border border-white bg-transparent text-white",
     black: "border border-black bg-transparent text-black",
   },
   ghost: {
-    primary: "bg-transparent text-lavender hover:bg-lavender/10",
-    secondary: "bg-transparent text-thistle hover:bg-thistle/10",
+    primary: "bg-transparent text-primary hover:bg-primary/10",
+    secondary: "bg-transparent text-secondary hover:bg-secondary/10",
     danger: "bg-transparent text-red-600 hover:bg-red-600/10",
     warning: "bg-transparent text-yellow-400 hover:bg-yellow-400/10",
     white: "bg-transparent text-white hover:bg-white/10",

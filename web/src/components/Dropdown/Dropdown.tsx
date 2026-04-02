@@ -3,7 +3,7 @@ import type { DropdownProps } from "./types";
 export function Dropdown({ children, isOpen }: DropdownProps) {
   return (
     <div
-      className={`w-56 rounded-2xl border border-lavender/20 bg-black/50 p-2 shadow-lg backdrop-blur transition-all duration-200 ${
+      className={`w-56 rounded-2xl border border-primary/20 bg-surface/10 p-2 shadow-lg backdrop-blur transition-all duration-200 ${
         isOpen
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none -translate-y-2 opacity-0"
