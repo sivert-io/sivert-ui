@@ -1514,6 +1514,37 @@ __metadata:
   languageName: node
   linkType: hard
 
+"flow-web@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "flow-web@workspace:."
+  dependencies:
+    "@babel/core": "npm:^7.29.0"
+    "@eslint/js": "npm:^9.39.4"
+    "@rolldown/plugin-babel": "npm:^0.2.1"
+    "@tailwindcss/vite": "npm:^4.2.2"
+    "@types/babel__core": "npm:^7.20.5"
+    "@types/node": "npm:^25.5.0"
+    "@types/react": "npm:^19.2.14"
+    "@types/react-dom": "npm:^19.2.3"
+    "@vitejs/plugin-react": "npm:^6.0.1"
+    babel-plugin-react-compiler: "npm:^1.0.0"
+    eslint: "npm:^9.39.4"
+    eslint-config-prettier: "npm:^10.1.8"
+    eslint-plugin-react-hooks: "npm:^7.0.1"
+    eslint-plugin-react-refresh: "npm:^0.5.2"
+    globals: "npm:^17.4.0"
+    prettier: "npm:3.8.1"
+    react: "npm:^19.2.4"
+    react-dom: "npm:^19.2.4"
+    react-icons: "npm:^5.6.0"
+    react-router: "npm:^7.13.2"
+    tailwindcss: "npm:^4.2.2"
+    typescript: "npm:^6.0.2"
+    typescript-eslint: "npm:^8.57.0"
+    vite: "npm:^8.0.1"
+  languageName: unknown
+  linkType: soft
+
 "fs-minipass@npm:^3.0.0":
   version: 3.0.3
   resolution: "fs-minipass@npm:3.0.3"
@@ -2434,37 +2465,6 @@ __metadata:
   checksum: 10c0/1dbed0726dd0e1152a92696c76c7f06084eb32a90f0528d11acd764043aacf76994b2fb30aa1291a21bd019d6699164d048286309a278855ee7bec06cf6fb690
   languageName: node
   linkType: hard
-
-"sivert-ui@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "sivert-ui@workspace:."
-  dependencies:
-    "@babel/core": "npm:^7.29.0"
-    "@eslint/js": "npm:^9.39.4"
-    "@rolldown/plugin-babel": "npm:^0.2.1"
-    "@tailwindcss/vite": "npm:^4.2.2"
-    "@types/babel__core": "npm:^7.20.5"
-    "@types/node": "npm:^25.5.0"
-    "@types/react": "npm:^19.2.14"
-    "@types/react-dom": "npm:^19.2.3"
-    "@vitejs/plugin-react": "npm:^6.0.1"
-    babel-plugin-react-compiler: "npm:^1.0.0"
-    eslint: "npm:^9.39.4"
-    eslint-config-prettier: "npm:^10.1.8"
-    eslint-plugin-react-hooks: "npm:^7.0.1"
-    eslint-plugin-react-refresh: "npm:^0.5.2"
-    globals: "npm:^17.4.0"
-    prettier: "npm:3.8.1"
-    react: "npm:^19.2.4"
-    react-dom: "npm:^19.2.4"
-    react-icons: "npm:^5.6.0"
-    react-router: "npm:^7.13.2"
-    tailwindcss: "npm:^4.2.2"
-    typescript: "npm:^6.0.2"
-    typescript-eslint: "npm:^8.57.0"
-    vite: "npm:^8.0.1"
-  languageName: unknown
-  linkType: soft
 
 "smart-buffer@npm:^4.2.0":
   version: 4.2.0

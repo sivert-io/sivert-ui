@@ -6,11 +6,7 @@ import { LoginView } from "./views/LoginView";
 import { NotFoundView } from "./views/NotFoundView";
 import { FrontPageView } from "./views/FrontPageView";
 
-const Logo = () => (
-  <div className="flex items-center gap-1 font-mono font-bold uppercase">
-    flow
-  </div>
-);
+const Logo = () => <img className="h-4" src="/flow.svg" />;
 
 function AppLayout() {
   return (
