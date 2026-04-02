@@ -5,7 +5,7 @@ import { Card } from "../components/Card";
 import { API_BASE_URL } from "../lib/api";
 import type { PublicProfile } from "../auth/types";
 import { Skeleton } from "../components/Skeleton";
-import { Rank } from "../components/Rank";
+import { Rank, RankProgressBar } from "../components/Rank";
 
 export function ProfileView() {
   const { user, isSignedIn, isLoading } = useAuth();
@@ -139,7 +139,7 @@ export function ProfileView() {
 
   return (
     <Card>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 w-full">
         {profile.avatarLarge ? (
           <img
             src={profile.avatarLarge}
@@ -150,12 +150,12 @@ export function ProfileView() {
           <div className="h-20 w-20 rounded-full bg-white/10" />
         )}
 
-        <div>
+        <div className="w-full">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">
               {profile.personaName ?? "Unnamed player"}
             </h1>
-            <Rank rank={profile.rank ?? undefined} />
+            <Rank rank={user?.rank || undefined} />
           </div>
           <p className="text-sm text-lavender/70">
             Steam ID: {profile.steamId}
@@ -166,6 +166,8 @@ export function ProfileView() {
               dateStyle: "long",
             })}
           </p>
+
+          <RankProgressBar rank={user?.rank || undefined} />
         </div>
       </div>
     </Card>
