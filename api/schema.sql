@@ -6,8 +6,10 @@ CREATE TABLE IF NOT EXISTS users (
   persona_name TEXT,
   profile_url TEXT,
   avatar_small TEXT,
+  avatar_medium TEXT,
   avatar_large TEXT,
-  avatar_large TEXT,
+  rank INTEGER,
+  role TEXT NOT NULL DEFAULT 'user',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

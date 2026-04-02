@@ -20,3 +20,8 @@ body {
 button {
   cursor: pointer;
 }
+
+a[target=_blank] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

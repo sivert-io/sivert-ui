@@ -28,6 +28,8 @@ export async function sessionMiddleware(
       avatarSmall: session.avatar_small,
       avatarMedium: session.avatar_medium,
       avatarLarge: session.avatar_large,
+      rank: session.rank,
+      role: session.role,
     };
 
     return next();

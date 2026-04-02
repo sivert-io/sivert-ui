@@ -85,6 +85,7 @@ router.get("/profiles/:steamId", async (req, res, next) => {
         avatar_small,
         avatar_medium,
         avatar_large,
+        rank,
         created_at
       FROM users
       WHERE steam_id = $1
@@ -108,6 +109,7 @@ router.get("/profiles/:steamId", async (req, res, next) => {
         avatarSmall: user.avatar_small,
         avatarMedium: user.avatar_medium,
         avatarLarge: user.avatar_large,
+        rank: user.rank,
         createdAt: user.created_at,
       },
     });

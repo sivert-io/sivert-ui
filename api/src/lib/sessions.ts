@@ -59,21 +59,22 @@ export async function revokeSession(sessionId: string) {
 export async function getSessionWithUser(sessionId: string) {
   const result = await db.query(
     `
-      SELECT
-        s.id AS session_id,
-        s.user_id,
-        u.steam_id,
-        u.persona_name,
-        u.avatar_small,
-        u.avatar_medium,
-        u.avatar_large
-      FROM sessions s
-      INNER JOIN users u ON u.id = s.user_id
-      WHERE
-        s.id = $1
-        AND s.revoked_at IS NULL
-        AND s.expires_at > NOW()
-      LIMIT 1
+    SELECT
+      s.id AS session_id,
+      s.user_id,
+      u.steam_id,
+      u.persona_name,
+      u.avatar_small,
+      u.avatar_medium,
+      u.avatar_large,
+      u.rank,
+      u.role
+    FROM sessions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.id = $1
+      AND s.expires_at > NOW()
+      AND s.revoked_at IS NULL
+    LIMIT 1
     `,
     [sessionId],
   );

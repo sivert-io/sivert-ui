@@ -6,6 +6,7 @@ import { Dropdown } from "../Dropdown";
 import type { NavbarProps } from "./types";
 import { useAuth } from "../../auth/useAuth";
 import { Skeleton } from "../Skeleton";
+import { Divider } from "../Divider/Divider";
 
 function DropdownLink({
   to,
@@ -24,7 +25,7 @@ function DropdownLink({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-lavender transition hover:bg-white/10"
     >
-      <span className="text-lg">{icon}</span>
+      <span>{icon}</span>
       <span>{children}</span>
     </Link>
   );
@@ -140,7 +141,11 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                       className="h-7 w-7 rounded-full"
                     />
                   ) : null}
-                  <span className="max-w-32 truncate text-sm">
+                  <span
+                    className={`max-w-32 truncate text-sm " ${
+                      user?.role === "admin" ? "text-purple-400" : ""
+                    }`}
+                  >
                     {user?.personaName ?? "Account"}
                   </span>
                 </>
@@ -154,7 +159,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                 <Dropdown isOpen={isOpen}>
                   <DropdownLink
                     to={user?.steamId ? `/profile/${user.steamId}` : "/profile"}
-                    icon={<MdBadge />}
+                    icon={<MdBadge size={16} />}
                     onClick={() => {
                       setIsPinned(false);
                       setIsOpen(false);
@@ -165,7 +170,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
 
                   <DropdownLink
                     to="/settings"
-                    icon={<MdSettings />}
+                    icon={<MdSettings size={16} />}
                     onClick={() => {
                       setIsPinned(false);
                       setIsOpen(false);
@@ -174,12 +179,14 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                     Settings
                   </DropdownLink>
 
+                  <Divider className="border-lavender/20" />
+
                   <button
                     onClick={handleSignOut}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-lavender transition hover:bg-white/10"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-red-300 transition hover:bg-white/10"
                   >
-                    <span className="text-lg">
-                      <MdLogout />
+                    <span>
+                      <MdLogout size={16} />
                     </span>
                     <span>Sign out</span>
                   </button>

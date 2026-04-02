@@ -9,6 +9,8 @@ declare global {
       avatarSmall: string | null;
       avatarMedium: string | null;
       avatarLarge: string | null;
+      rank: number | null;
+      role: string;
     }
 
     interface Request {

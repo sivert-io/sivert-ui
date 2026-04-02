@@ -5,6 +5,8 @@ export type AuthUser = {
   avatarSmall: string | null;
   avatarMedium: string | null;
   avatarLarge: string | null;
+  rank: number | null;
+  role: string;
 };
 
 export type MeResponse =
@@ -23,5 +25,6 @@ export type PublicProfile = {
   avatarSmall: string | null;
   avatarMedium: string | null;
   avatarLarge: string | null;
+  rank: number | null;
   createdAt: string;
 };
