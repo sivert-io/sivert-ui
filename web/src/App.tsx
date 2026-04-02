@@ -5,13 +5,12 @@ import { ProfileView } from "./views/ProfileView";
 import { LoginView } from "./views/LoginView";
 import { NotFoundView } from "./views/NotFoundView";
 import { FrontPageView } from "./views/FrontPageView";
-
-const Logo = () => <img className="h-4" src="/flow.svg" />;
+import { Logo } from "./components/Logo";
 
 function AppLayout() {
   return (
     <>
-      <Navbar Logo={Logo} isInQueue={false} />
+      <Navbar Logo={() => <Logo solid className="h-4" />} isInQueue={false} />
       <div className="py-24 max-w-7xl w-full mx-auto">
         <Outlet />
       </div>

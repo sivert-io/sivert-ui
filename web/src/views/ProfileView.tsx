@@ -138,38 +138,40 @@ export function ProfileView() {
   }
 
   return (
-    <Card>
-      <div className="flex items-center gap-4 w-full">
-        {profile.avatarLarge ? (
-          <img
-            src={profile.avatarLarge}
-            alt={profile.personaName ?? "Player avatar"}
-            className="h-20 w-20 rounded-full bg-black/20"
-          />
-        ) : (
-          <div className="h-20 w-20 rounded-full bg-white/10" />
-        )}
+    <div className="flex flex-col gap-4 w-full">
+      <Card>
+        <div className="flex items-center gap-4 w-full">
+          {profile.avatarLarge ? (
+            <img
+              src={profile.avatarLarge}
+              alt={profile.personaName ?? "Player avatar"}
+              className="h-20 w-20 rounded-full bg-black/20"
+            />
+          ) : (
+            <div className="h-20 w-20 rounded-full bg-white/10" />
+          )}
 
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">
-              {profile.personaName ?? "Unnamed player"}
-            </h1>
-            <Rank rank={user?.rank || undefined} />
+          <div className="w-full">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">
+                {profile.personaName ?? "Unnamed player"}
+              </h1>
+              <Rank rank={user?.rank || undefined} />
+            </div>
+            <p className="text-xs font-medium text-lavender/70">
+              Joined:{" "}
+              {new Date(profile.createdAt).toLocaleString("en-GB", {
+                dateStyle: "long",
+              })}
+            </p>
+
+            <RankProgressBar rank={user?.rank || undefined} />
           </div>
-          <p className="text-sm text-lavender/70">
-            Steam ID: {profile.steamId}
-          </p>
-          <p className="text-sm text-lavender/70">
-            Joined:{" "}
-            {new Date(profile.createdAt).toLocaleString("en-GB", {
-              dateStyle: "long",
-            })}
-          </p>
-
-          <RankProgressBar rank={user?.rank || undefined} />
         </div>
-      </div>
-    </Card>
+      </Card>
+      <Card>
+        <h1 className="font-bold text-lg">Match History</h1>
+      </Card>
+    </div>
   );
 }

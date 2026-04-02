@@ -2,9 +2,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #262626;
+  --color-background: #201113;
+  --color-surface: #58262E;
   --color-rose: #a2666f;
-  --color-lavender: #e3d3e4;
+  --color-lavender: #D9A6AE;
   --color-thistle: #e5cedc;
 
   --font-sans: "Lilex", monospace;
