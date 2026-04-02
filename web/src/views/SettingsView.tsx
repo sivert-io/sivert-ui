@@ -2,6 +2,7 @@ import { Link, Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import { Card } from "../components/Card";
 import { InputField } from "../components/InputField/InputField";
+import { Accordion } from "../components/Accordion";
 
 export function SettingsView() {
   const { isSignedIn, isLoading } = useAuth();
@@ -17,20 +18,22 @@ export function SettingsView() {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <h2 className="font-medium text-lg">CS2 Match Codes</h2>
-            <p className="text-sm text-rose">
-              Allows us to access your match history, your overall performance
-              in those matches, download replays of your matches, and analyze
-              your gameplay. <br />
-              <br />
-              <strong>We use this to determine your ELO.</strong>
-            </p>
-            <Link
-              className="text-sm"
-              target="_blank"
-              to="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
-            >
-              Get your codes here
-            </Link>
+            <Accordion label="What is this?">
+              <p className="text-sm text-rose">
+                CS2 Match Codes allow us to access your match history, your
+                overall performance in those matches, download replays of your
+                matches, and analyze your gameplay. <br />
+                <br />
+                <strong>We use this to determine your ELO.</strong>
+              </p>
+              <Link
+                className="text-sm"
+                target="_blank"
+                to="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
+              >
+                Get your codes here
+              </Link>
+            </Accordion>
           </div>
           <InputField
             label="CSGO Share Key *"
