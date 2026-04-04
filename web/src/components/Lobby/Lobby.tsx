@@ -89,6 +89,7 @@ export function Lobby({ user }: LobbyProps) {
   function renderPlayerSlot(
     player: (typeof players)[number] | null | undefined,
     scale = 1,
+    isOurselves?: boolean,
   ) {
     if (!player) {
       return (
@@ -101,7 +102,7 @@ export function Lobby({ user }: LobbyProps) {
       );
     }
 
-    if (isInQueue) {
+    if (isInQueue || isOurselves) {
       return (
         <PlayerCard
           playerData={player}
@@ -141,7 +142,7 @@ export function Lobby({ user }: LobbyProps) {
       <div className="relative z-20 flex w-full items-center justify-between">
         {renderPlayerSlot(players[3], 0.7)}
         {renderPlayerSlot(players[1], 0.85)}
-        {renderPlayerSlot(players[0], 1)}
+        {renderPlayerSlot(players[0], 1, true)}
         {renderPlayerSlot(players[2], 0.85)}
         {renderPlayerSlot(players[4], 0.7)}
       </div>

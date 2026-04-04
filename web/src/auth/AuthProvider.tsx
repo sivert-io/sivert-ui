@@ -8,6 +8,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshAuth = useCallback(async () => {
+    setIsLoading(true);
+
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         credentials: "include",
@@ -32,12 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    setUser(null);
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   useEffect(() => {

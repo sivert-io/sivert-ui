@@ -102,13 +102,15 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
               const isInvited = invitedPlayerIds.includes(player.steamId);
 
               return (
-                <PlayerCard
-                  key={player.steamId}
-                  playerData={player}
-                  onClick={() => handleInvite(player)}
-                  disabled={isInvited}
-                  statusLabel={isInvited ? "Invited" : undefined}
-                />
+                <div className={isInvited ? "opacity-25" : ""}>
+                  <PlayerCard
+                    key={player.steamId}
+                    playerData={player}
+                    onClick={() => handleInvite(player)}
+                    disabled={isInvited}
+                    statusLabel={isInvited ? "Invited" : undefined}
+                  />
+                </div>
               );
             })}
           </div>

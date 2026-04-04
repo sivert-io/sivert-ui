@@ -1,15 +1,20 @@
 import { Card } from "../components/Card";
 import { Lobby } from "../components/Lobby/Lobby";
 import { useAuth } from "../auth/useAuth";
+import { LandingView } from "./LandingView";
 
 export function FrontPageView() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   return (
-    <Card>
-      <div className="flex flex-col items-center gap-4">
-        {user && <Lobby user={user} />}
-      </div>
-    </Card>
+    <>
+      {!isLoading && user && (
+        <Card>
+          <Lobby user={user} />
+        </Card>
+      )}
+
+      {!isLoading && !user && <LandingView />}
+    </>
   );
 }

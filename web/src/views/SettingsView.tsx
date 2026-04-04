@@ -3,6 +3,7 @@ import { useAuth } from "../auth/useAuth";
 import { Card } from "../components/Card";
 import { InputField } from "../components/InputField/InputField";
 import { Accordion } from "../components/Accordion";
+import { MdOpenInNew } from "react-icons/md";
 
 export function SettingsView() {
   const { isSignedIn, isLoading } = useAuth();
@@ -25,19 +26,22 @@ export function SettingsView() {
                   overall performance in those matches, download replays of your
                   matches, and analyze your gameplay.
                 </p>
-                <p className=" text-primary">
+                <p className="text-primary">
                   <strong>We use them to determine your ELO.</strong>
                 </p>
                 <Link
-                  className="w-fit"
+                  className="inline-flex w-fit items-center gap-1"
                   target="_blank"
+                  rel="noreferrer"
                   to="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
                 >
-                  Get your codes here
+                  <span>Get your codes here</span>
+                  <MdOpenInNew className="inline-block" />
                 </Link>
               </div>
             </Accordion>
           </div>
+
           <InputField
             label="CSGO Share Key *"
             type="password"

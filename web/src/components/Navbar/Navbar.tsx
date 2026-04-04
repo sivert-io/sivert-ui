@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/useAuth";
 import { Skeleton } from "../Skeleton";
 import { Divider } from "../Divider/Divider";
 import { HoverDropdown } from "../Dropdown";
+import { Logo } from "../Logo";
 
 function DropdownLink({
   to,
@@ -30,7 +31,7 @@ function DropdownLink({
   );
 }
 
-export function Navbar({ Logo, isInQueue }: NavbarProps) {
+export function Navbar({ isInQueue }: NavbarProps) {
   const navigate = useNavigate();
   const { user, isSignedIn, isLoading, signIn, signOut } = useAuth();
 
@@ -46,12 +47,12 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
       >
         <nav className="flex justify-between rounded-full border border-primary/20 bg-black/10 p-2">
           <Button href="/" variant="ghost">
-            <Logo />
+            <Logo solid className="h-4" />
           </Button>
 
           {isLoading ? (
             <div className="flex items-center gap-2 rounded-full px-4 py-2">
-              <Skeleton circle className="h-7 w-7" />
+              <Skeleton circle className="h-6 w-6" />
               <Skeleton className="h-4 w-20 rounded-full" />
             </div>
           ) : !isSignedIn ? (
@@ -94,7 +95,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                         <img
                           src={user.avatarSmall}
                           alt={user.personaName ?? "User avatar"}
-                          className="h-7 w-7 rounded-full"
+                          className="h-6 w-6 rounded-full"
                         />
                       ) : null}
                       <span
