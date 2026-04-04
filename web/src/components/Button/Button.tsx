@@ -1,5 +1,5 @@
 import type React from "react";
-import { Link } from "react-router";
+import { Link } from "../Link";
 import type { ButtonColor, ButtonProps, ButtonVariant } from "./types";
 
 const baseStyles =

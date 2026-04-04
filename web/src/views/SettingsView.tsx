@@ -1,9 +1,9 @@
-import { Link, Navigate } from "react-router";
+import { Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import { Card } from "../components/Card";
 import { InputField } from "../components/InputField/InputField";
 import { Accordion } from "../components/Accordion";
-import { MdOpenInNew } from "react-icons/md";
+import { Link } from "../components/Link";
 
 export function SettingsView() {
   const { isSignedIn, isLoading } = useAuth();
@@ -30,13 +30,11 @@ export function SettingsView() {
                   <strong>We use them to determine your ELO.</strong>
                 </p>
                 <Link
-                  className="inline-flex w-fit items-center gap-1"
                   target="_blank"
                   rel="noreferrer"
                   to="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
                 >
                   <span>Get your codes here</span>
-                  <MdOpenInNew className="inline-block" />
                 </Link>
               </div>
             </Accordion>

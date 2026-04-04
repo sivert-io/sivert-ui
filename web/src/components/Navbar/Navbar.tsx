@@ -1,5 +1,5 @@
 import { MdBadge, MdSettings, MdLogout, MdNotifications } from "react-icons/md";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "../Button";
 import type { NavbarProps } from "./types";
 import { useAuth } from "../../auth/useAuth";
@@ -7,6 +7,8 @@ import { Skeleton } from "../Skeleton";
 import { Divider } from "../Divider/Divider";
 import { HoverDropdown } from "../Dropdown";
 import { Logo } from "../Logo";
+import { Link } from "../Link";
+import { FaSteam } from "react-icons/fa";
 
 function DropdownLink({
   to,
@@ -21,12 +23,13 @@ function DropdownLink({
 }) {
   return (
     <Link
+      underline={false}
       to={to}
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-primary transition hover:bg-white/10"
     >
-      <span>{icon}</span>
-      <span>{children}</span>
+      {icon}
+      {children}
     </Link>
   );
 }
@@ -57,7 +60,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
             </div>
           ) : !isSignedIn ? (
             <Button variant="solid" onClick={signIn}>
-              Sign in
+              Sign in <FaSteam />
             </Button>
           ) : (
             <div className="flex items-center gap-2">

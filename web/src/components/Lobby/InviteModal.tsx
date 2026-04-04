@@ -82,12 +82,6 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
       <div className="space-y-4 text-primary">
         <h2 className="text-xl font-semibold">Invite players</h2>
 
-        {invitedPlayerIds.length > 0 ? (
-          <p className="text-sm text-primary/70">
-            Invited: {invitedPlayerIds.length}
-          </p>
-        ) : null}
-
         {isLoading && (
           <p className="text-sm text-primary/70">Loading players...</p>
         )}

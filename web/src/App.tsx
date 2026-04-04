@@ -12,12 +12,14 @@ import { PrivacyPolicyView } from "./views/PrivacyPolicyView";
 
 function AppLayout() {
   return (
-    <>
+    <div className="min-h-screen">
       <Navbar isInQueue={false} />
-      <div className="py-24 max-w-7xl w-full mx-auto">
-        <Outlet />
-      </div>
-    </>
+      <main className="w-full">
+        <div className="max-w-7xl w-full mx-auto px-4 pt-24 pb-12">
+          <Outlet />
+        </div>
+      </main>
+    </div>
   );
 }
 

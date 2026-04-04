@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link } from "../components/Link";
 import { Card } from "../components/Card";
 import type React from "react";
 
