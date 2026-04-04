@@ -45,7 +45,7 @@ export function Dropdown({
             exit={initial}
             transition={{ duration: 0.16, ease: "easeOut" }}
             className={[
-              "z-100 w-56 rounded-2xl border border-primary/20 bg-black/1 backdrop-blur-xs p-2 shadow-xl",
+              "z-400 w-56 rounded-2xl border border-primary/20 bg-background/90 backdrop-blur-xs p-2 shadow-xl",
               className,
             ].join(" ")}
           >

@@ -5,7 +5,7 @@ import type { NavbarProps } from "./types";
 import { useAuth } from "../../auth/useAuth";
 import { Skeleton } from "../Skeleton";
 import { Divider } from "../Divider/Divider";
-import { NavbarDropdown } from "./NavbarDropdown";
+import { HoverDropdown } from "../Dropdown";
 
 function DropdownLink({
   to,
@@ -60,7 +60,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
             </Button>
           ) : (
             <div className="flex items-center gap-2">
-              <NavbarDropdown
+              <HoverDropdown
                 placement="bottom-center"
                 trigger={({ isOpen, toggle }) => (
                   <Button
@@ -77,9 +77,9 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                 <div className="px-3 py-2 text-sm text-primary">
                   No notifications yet
                 </div>
-              </NavbarDropdown>
+              </HoverDropdown>
 
-              <NavbarDropdown
+              <HoverDropdown
                 placement="bottom-right"
                 trigger={({ isOpen, toggle }) => (
                   <Button
@@ -130,7 +130,7 @@ export function Navbar({ Logo, isInQueue }: NavbarProps) {
                   </span>
                   <span>Sign out</span>
                 </button>
-              </NavbarDropdown>
+              </HoverDropdown>
             </div>
           )}
         </nav>

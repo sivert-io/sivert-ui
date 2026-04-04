@@ -99,7 +99,7 @@ export function Modal({
       {open ? (
         <motion.div
           className={[
-            "fixed inset-0 z-[999] grid place-items-center p-4",
+            "fixed inset-0 z-999 grid place-items-center p-4",
             className,
           ].join(" ")}
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}

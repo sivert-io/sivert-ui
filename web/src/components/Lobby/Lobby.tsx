@@ -1,11 +1,13 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { useLobby } from "../../hooks/useLobby";
 import { PlayerCard } from "../PlayerCard";
 import type { LobbyProps } from "./types";
 import { InviteModal } from "./InviteModal";
 import { Spinner } from "../Spinner";
 import { Button } from "../Button";
+import { HoverDropdown } from "../Dropdown/HoverDropdown";
 
 function formatElapsed(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -15,8 +17,33 @@ function formatElapsed(ms: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+function DropdownActionButton({
+  children,
+  onClick,
+  danger = false,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm transition hover:bg-white/10",
+        danger ? "text-red-300" : "text-primary",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Lobby({ user }: LobbyProps) {
   const { players } = useLobby(user);
+  const navigate = useNavigate();
+
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [queueStartTime, setQueueStartTime] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -51,37 +78,78 @@ export function Lobby({ user }: LobbyProps) {
     setShowInviteModal(true);
   }
 
+  function handleViewProfile(steamId: string) {
+    navigate(`/profile/${steamId}`);
+  }
+
+  function handleKickFromLobby(steamId: string) {
+    console.log("Kick from lobby:", steamId);
+  }
+
+  function renderPlayerSlot(
+    player: (typeof players)[number] | null | undefined,
+    scale = 1,
+  ) {
+    if (!player) {
+      return (
+        <PlayerCard
+          playerData={null}
+          onClick={openInviteModal}
+          disableInvite={isInQueue}
+          scale={scale}
+        />
+      );
+    }
+
+    if (isInQueue) {
+      return (
+        <PlayerCard
+          playerData={player}
+          onClick={() => handleViewProfile(player.steamId)}
+          scale={scale}
+        />
+      );
+    }
+
+    return (
+      <HoverDropdown
+        placement="bottom-center"
+        hoverable
+        closeDelay={120}
+        trigger={() => (
+          <PlayerCard
+            playerData={player}
+            onClick={() => handleViewProfile(player.steamId)}
+            scale={scale}
+          />
+        )}
+      >
+        <div className="flex flex-col gap-1">
+          <DropdownActionButton
+            danger
+            onClick={() => handleKickFromLobby(player.steamId)}
+          >
+            Kick from lobby
+          </DropdownActionButton>
+        </div>
+      </HoverDropdown>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      <div className="flex items-center justify-between w-full">
-        <PlayerCard
-          playerData={players[3] ?? null}
-          onClick={openInviteModal}
-          disableInvite={isInQueue}
-          scale={0.7}
-        />
-        <PlayerCard
-          playerData={players[1] ?? null}
-          onClick={openInviteModal}
-          disableInvite={isInQueue}
-          scale={0.85}
-        />
-        <PlayerCard playerData={players[0] ?? null} onClick={openInviteModal} />
-        <PlayerCard
-          playerData={players[2] ?? null}
-          onClick={openInviteModal}
-          disableInvite={isInQueue}
-          scale={0.85}
-        />
-        <PlayerCard
-          playerData={players[4] ?? null}
-          onClick={openInviteModal}
-          disableInvite={isInQueue}
-          scale={0.7}
-        />
+    <div className="flex w-full flex-col items-center gap-4">
+      <div className="relative z-20 flex w-full items-center justify-between">
+        {renderPlayerSlot(players[3], 0.7)}
+        {renderPlayerSlot(players[1], 0.85)}
+        {renderPlayerSlot(players[0], 1)}
+        {renderPlayerSlot(players[2], 0.85)}
+        {renderPlayerSlot(players[4], 0.7)}
       </div>
 
-      <motion.div layout className="flex flex-col items-center gap-4">
+      <motion.div
+        layout
+        className="relative z-10 flex flex-col items-center gap-4"
+      >
         <AnimatePresence initial={false} mode="popLayout">
           {isInQueue && (
             <motion.div

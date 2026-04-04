@@ -1,25 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { Dropdown } from "../Dropdown";
+import { Dropdown } from ".";
 
-interface NavbarDropdownProps {
+interface HoverDropdownProps {
   trigger: (args: {
     isOpen: boolean;
     toggle: () => void;
     close: () => void;
+    open: () => void;
   }) => React.ReactNode;
   children: React.ReactNode;
   placement?: React.ComponentProps<typeof Dropdown>["placement"];
   hoverable?: boolean;
   closeDelay?: number;
+  className?: string;
 }
 
-export function NavbarDropdown({
+export function HoverDropdown({
   trigger,
   children,
   placement = "bottom-right",
   hoverable = true,
-  closeDelay = 500,
-}: NavbarDropdownProps) {
+  closeDelay = 150,
+  className,
+}: HoverDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
@@ -33,7 +36,7 @@ export function NavbarDropdown({
     }
   }
 
-  function openDropdown() {
+  function open() {
     clearCloseTimeout();
     setIsOpen(true);
   }
@@ -87,11 +90,11 @@ export function NavbarDropdown({
   return (
     <div
       ref={rootRef}
-      className="relative"
-      onMouseEnter={hoverable ? openDropdown : undefined}
+      className={`${className ?? "relative"} z-350 relative`}
+      onMouseEnter={hoverable ? open : undefined}
       onMouseLeave={hoverable ? scheduleClose : undefined}
     >
-      {trigger({ isOpen, toggle, close })}
+      {trigger({ isOpen, toggle, close, open })}
 
       <Dropdown isOpen={isOpen} placement={placement}>
         {children}

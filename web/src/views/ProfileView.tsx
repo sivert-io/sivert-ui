@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import { Card } from "../components/Card";
-import { API_BASE_URL } from "../lib/api";
 import type { PublicProfile } from "../auth/types";
 import { Skeleton } from "../components/Skeleton";
 import { Rank, RankProgressBar } from "../components/Rank";
+import { findPlayer } from "../lib/findPlayer";
 
 export function ProfileView() {
   const { user, isSignedIn, isLoading } = useAuth();
@@ -19,6 +19,7 @@ export function ProfileView() {
   useEffect(() => {
     if (!steamId) return;
 
+    const currentSteamId = steamId;
     let cancelled = false;
 
     async function loadProfile() {
@@ -27,29 +28,16 @@ export function ProfileView() {
       setHasError(false);
 
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/auth/profiles/${steamId}`,
-          {
-            credentials: "include",
-          },
-        );
-
-        if (response.status === 404) {
-          if (!cancelled) {
-            setProfile(null);
-            setNotFound(true);
-          }
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("Failed to load profile");
-        }
-
-        const data = await response.json();
+        const foundProfile = await findPlayer(currentSteamId);
 
         if (!cancelled) {
-          setProfile(data.profile);
+          if (!foundProfile) {
+            setProfile(null);
+            setNotFound(true);
+            return;
+          }
+
+          setProfile(foundProfile);
         }
       } catch {
         if (!cancelled) {
@@ -156,7 +144,7 @@ export function ProfileView() {
               <h1 className="text-2xl font-bold">
                 {profile.personaName ?? "Unnamed player"}
               </h1>
-              <Rank rank={user?.rank} />
+              <Rank rank={profile.rank} />
             </div>
             <p className="text-xs font-medium text-primary/70">
               Joined:{" "}
@@ -165,7 +153,7 @@ export function ProfileView() {
               })}
             </p>
 
-            <RankProgressBar rank={user?.rank} />
+            <RankProgressBar rank={profile.rank} />
           </div>
         </div>
       </Card>

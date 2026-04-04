@@ -10,7 +10,9 @@ const BASE_HEIGHT = 192;
 export function PlayerCard({
   playerData,
   onClick,
+  disabled = false,
   disableInvite,
+  statusLabel,
   scale = 1,
 }: PlayerCardProps) {
   const slotStyle = {
@@ -61,9 +63,12 @@ export function PlayerCard({
               </Button>
             </motion.div>
           ) : (
-            <motion.div
-              key="player"
-              className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-lg border border-primary/25 bg-primary/5 p-6"
+            <motion.button
+              key={playerData.steamId + playerData.personaName}
+              type="button"
+              onClick={onClick}
+              disabled={disabled}
+              className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-lg border border-primary/25 bg-primary/5 p-4 text-left transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
               initial={{ opacity: 0, scale: scale * 0.9 }}
               animate={{ opacity: 1, scale }}
               exit={{ opacity: 0, scale: scale * 0.9 }}
@@ -73,13 +78,21 @@ export function PlayerCard({
                 <img
                   className="h-16 w-16 rounded-full border border-primary/25 bg-background"
                   src={playerData.avatarLarge || ""}
+                  alt={playerData.personaName ?? "Player avatar"}
                 />
-                <p className="text-lg font-bold truncate">
+                <p className="max-w-full truncate text-lg font-bold">
                   {playerData.personaName}
                 </p>
               </div>
+
               <Rank rank={playerData.rank} />
-            </motion.div>
+
+              {statusLabel ? (
+                <p className="text-xs font-medium uppercase tracking-wide text-primary/70">
+                  {statusLabel}
+                </p>
+              ) : null}
+            </motion.button>
           )}
         </AnimatePresence>
       </div>
