@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import type { ButtonColor, ButtonProps, ButtonVariant } from "./types";
 
 const baseStyles =
-  "rounded-full transform-gpu transition-transform duration-100 ease-out active:scale-[0.9] disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-full transform-gpu transition-transform duration-100 ease-out active:scale-[0.9] disabled:scale-[1] disabled:opacity-50 disabled:cursor-default!";
 
 const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
   solid: {
@@ -45,7 +45,7 @@ export function Button({
   type = "button",
   ...props
 }: Props) {
-  const classes = `font-medium flex items-center gap-2 ${baseStyles} ${styles[variant][color]} ${
+  const classes = `font-medium flex items-center justify-center gap-2 ${baseStyles} ${styles[variant][color]} ${
     square ? "p-3" : "px-4 py-2"
   } ${className}`;
 

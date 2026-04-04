@@ -151,12 +151,12 @@ export function ProfileView() {
             <div className="h-20 w-20 rounded-full bg-white/10" />
           )}
 
-          <div className="w-full">
+          <div className="w-full flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">
                 {profile.personaName ?? "Unnamed player"}
               </h1>
-              <Rank rank={user?.rank || undefined} />
+              <Rank rank={user?.rank} />
             </div>
             <p className="text-xs font-medium text-primary/70">
               Joined:{" "}
@@ -165,7 +165,7 @@ export function ProfileView() {
               })}
             </p>
 
-            <RankProgressBar rank={user?.rank || undefined} />
+            <RankProgressBar rank={user?.rank} />
           </div>
         </div>
       </Card>

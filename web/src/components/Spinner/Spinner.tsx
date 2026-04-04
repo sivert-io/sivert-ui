@@ -12,12 +12,96 @@ const easingMap: Record<SpinnerEasing, string> = {
   stepped: "steps(12, end)",
 };
 
+type SpinnerMode = "rotate" | "fill";
+
+type Props = SpinnerProps & {
+  mode?: SpinnerMode;
+  backgroundOpacity?: number;
+  fillFadeStart?: number; // 0..1
+};
+
 export function Spinner({
   size = 16,
   duration = 0.8,
   easing = "linear",
   direction = "normal",
-}: SpinnerProps) {
+  mode = "rotate",
+  backgroundOpacity = 0.2,
+  fillFadeStart = 0.82,
+}: Props) {
+  if (mode === "fill") {
+    return (
+      <>
+        <span
+          role="status"
+          aria-label="Loading"
+          style={{
+            position: "relative",
+            display: "inline-block",
+            width: size,
+            height: size,
+            lineHeight: 0,
+          }}
+        >
+          <SpinnerIcon
+            aria-hidden="true"
+            style={{
+              width: size,
+              height: size,
+              display: "block",
+              opacity: backgroundOpacity,
+            }}
+          />
+
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "block",
+              animationName: "spinner-fill-reveal, spinner-fill-fade",
+              animationDuration: `${duration}s, ${duration}s`,
+              animationTimingFunction: `${easingMap[easing]}, linear`,
+              animationIterationCount: "infinite, infinite",
+              animationDirection: `${direction}, ${direction}`,
+              animationFillMode: "both, both",
+              willChange: "clip-path, opacity",
+              clipPath: "inset(100% 0 0 0)",
+            }}
+          >
+            <SpinnerIcon
+              style={{
+                width: size,
+                height: size,
+                display: "block",
+              }}
+            />
+          </span>
+        </span>
+
+        <style>
+          {`
+            @keyframes spinner-rotate {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(720deg); }
+            }
+
+            @keyframes spinner-fill-reveal {
+              from { clip-path: inset(100% 0 0 0); }
+              to { clip-path: inset(0% 0 0 0); }
+            }
+
+            @keyframes spinner-fill-fade {
+              0% { opacity: 1; }
+              ${fillFadeStart * 100}% { opacity: 1; }
+              100% { opacity: 0; }
+            }
+          `}
+        </style>
+      </>
+    );
+  }
+
   return (
     <>
       <SpinnerIcon

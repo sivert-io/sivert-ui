@@ -1,14 +1,11 @@
 import { getRankBadgeStyle, getRankProgress } from "./rankBadge";
-
-type RankProgressBarProps = {
-  rank?: number;
-};
+import type { RankProps } from "./types";
 
 function formatRankValue(value: number) {
   return new Intl.NumberFormat("en-GB").format(value);
 }
 
-export function RankProgressBar({ rank }: RankProgressBarProps) {
+export function RankProgressBar({ rank }: RankProps) {
   const progress = getRankProgress(rank);
 
   if (!progress) {

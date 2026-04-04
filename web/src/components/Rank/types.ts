@@ -1,3 +1,3 @@
 export interface RankProps {
-  rank?: number;
+  rank: number | null | undefined;
 }

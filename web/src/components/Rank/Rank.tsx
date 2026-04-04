@@ -36,8 +36,8 @@ export function Rank({ rank }: RankProps) {
         className={`z-10 flex items-center justify-center gap-1 pl-2 pr-3.5 h-full w-full ${badge.textClassName}`}
       >
         <MdShield size={12} />
-        <p className="truncate text-xs">
-          {rank ? formatRankValue(rank) : "--"}
+        <p className="truncate text-xs font-bold">
+          {rank ? formatRankValue(rank) : "NO RANK"}
         </p>
       </div>
     </div>

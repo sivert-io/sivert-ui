@@ -196,17 +196,17 @@ function getColorBand(stage: number): RankColorBand {
 }
 
 export function getRankBadgeStyle(
-  rank?: number,
+  rank?: number | null,
   maxRank = DEFAULT_MAX_RANK,
 ): RankBadgeStyle {
   if (rank == null || Number.isNaN(rank)) {
     return {
       tier: "unranked",
       stage: 0,
-      bgClassName: "bg-slate-200",
-      fillClassName: "text-slate-200",
-      textClassName: "text-slate-500",
-      className: `${BASE_BADGE_CLASS} text-slate-500`,
+      bgClassName: "bg-primary",
+      fillClassName: "text-primary",
+      textClassName: "text-black",
+      className: `${BASE_BADGE_CLASS} text-primary`,
     };
   }
 
@@ -225,7 +225,7 @@ export function getRankBadgeStyle(
 }
 
 export function getRankProgress(
-  rank?: number,
+  rank?: number | null,
   maxRank = DEFAULT_MAX_RANK,
 ): RankProgressInfo | null {
   if (rank == null || Number.isNaN(rank)) {

@@ -7,10 +7,12 @@ import { NotFoundView } from "./views/NotFoundView";
 import { FrontPageView } from "./views/FrontPageView";
 import { Logo } from "./components/Logo";
 
+const LOGO = () => <Logo solid className="h-4" />;
+
 function AppLayout() {
   return (
     <>
-      <Navbar Logo={() => <Logo solid className="h-4" />} isInQueue={false} />
+      <Navbar Logo={LOGO} isInQueue={false} />
       <div className="py-24 max-w-7xl w-full mx-auto">
         <Outlet />
       </div>
