@@ -1,5 +1,5 @@
-import SpinnerIcon from "./spinner.svg?react";
 import type { SpinnerEasing, SpinnerProps } from "./types";
+import { useRandomSpinnerIcon } from "./RandomIcon";
 
 const easingMap: Record<SpinnerEasing, string> = {
   linear: "linear",
@@ -17,7 +17,7 @@ type SpinnerMode = "rotate" | "fill";
 type Props = SpinnerProps & {
   mode?: SpinnerMode;
   backgroundOpacity?: number;
-  fillFadeStart?: number; // 0..1
+  fillFadeStart?: number;
 };
 
 export function Spinner({
@@ -29,6 +29,8 @@ export function Spinner({
   backgroundOpacity = 0.2,
   fillFadeStart = 0.82,
 }: Props) {
+  const Icon = useRandomSpinnerIcon();
+
   if (mode === "fill") {
     return (
       <>
@@ -43,7 +45,7 @@ export function Spinner({
             lineHeight: 0,
           }}
         >
-          <SpinnerIcon
+          <Icon
             aria-hidden="true"
             style={{
               width: size,
@@ -69,7 +71,7 @@ export function Spinner({
               clipPath: "inset(100% 0 0 0)",
             }}
           >
-            <SpinnerIcon
+            <Icon
               style={{
                 width: size,
                 height: size,
@@ -104,7 +106,7 @@ export function Spinner({
 
   return (
     <>
-      <SpinnerIcon
+      <Icon
         role="status"
         aria-label="Loading"
         style={{
