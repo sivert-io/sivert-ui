@@ -71,7 +71,7 @@ export function PlayerCard({
             </motion.div>
           ) : (
             <motion.button
-              key={playerData.steamId + playerData.personaName}
+              key={playerData.steamId}
               type="button"
               onClick={onClick}
               disabled={disabled}
@@ -81,7 +81,7 @@ export function PlayerCard({
                 isOffline
                   ? "border-white/10 bg-white/5 text-primary/60 hover:bg-white/10 opacity-60"
                   : "border-primary/25 bg-primary/5 hover:bg-primary/10",
-                statusLabel === "invited" && !isOffline && "border-secondary",
+                resolvedStatusLabel === "invited" && "border-secondary",
               )}
               initial={{ opacity: 0, scale: scale * 0.9 }}
               animate={{ opacity: 1, scale }}

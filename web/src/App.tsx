@@ -54,9 +54,7 @@ function AuthLoader() {
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.2 }}
         className="text-sm text-primary/70"
-      >
-        Checking sign-in status...
-      </motion.div>
+      ></motion.div>
     </div>
   );
 }

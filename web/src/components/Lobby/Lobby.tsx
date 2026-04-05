@@ -74,6 +74,9 @@ export function Lobby({ user }: LobbyProps) {
   const [isLobbyLoading, setIsLobbyLoading] = useState(true);
   const [, setPresenceNow] = useState(Date.now());
   const [queueNow, setQueueNow] = useState(Date.now());
+  const [isQueueHydrated, setIsQueueHydrated] = useState(false);
+  const [isQueueMutating, setIsQueueMutating] = useState(false);
+  const [isLeavingLobby, setIsLeavingLobby] = useState(false);
 
   useEffect(() => {
     function onLobbyChanged(event: Event) {
@@ -137,7 +140,26 @@ export function Lobby({ user }: LobbyProps) {
     lobbyId: lobbyId ?? "",
   });
 
-  const isInQueue = !!queueState?.isSearching;
+  useEffect(() => {
+    if (!lobbyId) {
+      setIsQueueHydrated(false);
+      return;
+    }
+
+    if (queueState !== undefined) {
+      setIsQueueHydrated(true);
+    }
+  }, [lobbyId, queueState]);
+
+  const isQueueKnown = !!lobbyId && isQueueHydrated;
+  const isInQueue = isQueueKnown && !!queueState?.isSearching;
+  const disableQueueActions =
+    isLobbyLoading ||
+    !lobbyId ||
+    !isQueueKnown ||
+    isQueueMutating ||
+    isLeavingLobby;
+
   const elapsedLabel =
     isInQueue && queueState?.startedAt
       ? formatElapsed(queueNow - new Date(queueState.startedAt).getTime())
@@ -145,6 +167,8 @@ export function Lobby({ user }: LobbyProps) {
 
   useEffect(() => {
     if (!isInQueue || !queueState?.startedAt) return;
+
+    setQueueNow(Date.now());
 
     const interval = window.setInterval(() => {
       setQueueNow(Date.now());
@@ -168,19 +192,31 @@ export function Lobby({ user }: LobbyProps) {
     return () => window.clearInterval(interval);
   }, [hasOfflinePlayers]);
 
-  function handleToggleQueue() {
-    if (!lobbyId) return;
+  async function handleToggleQueue() {
+    if (!lobbyId || disableQueueActions) return;
 
-    if (isInQueue) {
-      stopQueue();
-      return;
+    try {
+      setIsQueueMutating(true);
+
+      if (isInQueue) {
+        await stopQueue();
+        return;
+      }
+
+      setQueueNow(Date.now());
+      await startQueue();
+    } catch (error) {
+      console.error(error);
+      toast(
+        isInQueue ? "Failed to stop searching" : "Failed to start searching",
+      );
+    } finally {
+      setIsQueueMutating(false);
     }
-
-    startQueue();
   }
 
   function openInviteModal() {
-    if (isInQueue || !lobbyId) return;
+    if (!lobbyId || disableQueueActions || isInQueue) return;
     setShowInviteModal(true);
   }
 
@@ -193,7 +229,11 @@ export function Lobby({ user }: LobbyProps) {
   }
 
   async function handleLeaveLobby() {
+    if (!lobbyId || disableQueueActions || isInQueue) return;
+
     try {
+      setIsLeavingLobby(true);
+
       const response = await fetch(`${API_BASE_URL}/lobbies/current/leave`, {
         method: "POST",
         credentials: "include",
@@ -205,12 +245,20 @@ export function Lobby({ user }: LobbyProps) {
         throw new Error(data?.error ?? "Failed to leave lobby");
       }
 
-      setLobbyId(data.lobby.lobbyId);
+      const nextLobbyId = data?.lobby?.lobbyId;
+
+      if (!nextLobbyId) {
+        throw new Error("Lobby left, but no new lobby was returned");
+      }
+
+      setLobbyId(nextLobbyId);
       setShowInviteModal(false);
       toast("You left the lobby");
     } catch (error) {
       console.error(error);
       toast(error instanceof Error ? error.message : "Failed to leave lobby");
+    } finally {
+      setIsLeavingLobby(false);
     }
   }
 
@@ -234,7 +282,7 @@ export function Lobby({ user }: LobbyProps) {
         <PlayerCard
           playerData={null}
           onClick={openInviteModal}
-          disableInvite={isInQueue || isLobbyLoading || !lobbyId}
+          disableInvite={disableQueueActions || isInQueue}
           scale={scale}
         />
       );
@@ -250,7 +298,7 @@ export function Lobby({ user }: LobbyProps) {
       />
     );
 
-    if (isInQueue || isOurselves) {
+    if (isInQueue || !isQueueKnown || isQueueMutating || isOurselves) {
       return playerCard;
     }
 
@@ -274,7 +322,7 @@ export function Lobby({ user }: LobbyProps) {
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-4">
+    <div className="relative flex w-full flex-col items-center gap-4">
       <div className="relative z-20 flex w-full items-center justify-between">
         {renderPlayerSlot(players[3], 0.7)}
         {renderPlayerSlot(players[1], 0.85)}
@@ -307,7 +355,7 @@ export function Lobby({ user }: LobbyProps) {
         </AnimatePresence>
 
         <motion.div
-          className="relative flex flex-col justify-end items-center gap-2"
+          className="relative flex flex-col items-center justify-end gap-2"
           initial={{ height: 36 }}
           animate={{ height: isInQueue ? 170 : 36 }}
         >
@@ -315,31 +363,31 @@ export function Lobby({ user }: LobbyProps) {
             <Button
               onClick={handleToggleQueue}
               variant={isInQueue ? "outline" : "solid"}
-              disabled={isLobbyLoading || !lobbyId}
+              disabled={disableQueueActions}
             >
               {isInQueue ? "Stop searching" : "Find match"}
             </Button>
-
-            {!isInQueue && players.filter(Boolean).length > 1 && (
-              <Tooltip
-                wrapperClassName="absolute left-full top-1/2 ml-2 -translate-y-1/2"
-                content="Leave lobby"
-                placement="bottom-center"
-              >
-                <Button
-                  onClick={handleLeaveLobby}
-                  square
-                  size="sm"
-                  variant="ghost"
-                  disabled={isLobbyLoading || !lobbyId}
-                >
-                  <MdClose />
-                </Button>
-              </Tooltip>
-            )}
           </div>
         </motion.div>
       </div>
+
+      {!isInQueue && players.filter(Boolean).length > 1 && (
+        <Tooltip
+          wrapperClassName="absolute -top-4 -right-4 z-20"
+          content="Leave lobby"
+          placement="left-center"
+        >
+          <Button
+            onClick={handleLeaveLobby}
+            square
+            size="sm"
+            variant="ghost"
+            disabled={disableQueueActions}
+          >
+            <MdClose />
+          </Button>
+        </Tooltip>
+      )}
 
       <InviteModal open={showInviteModal} setOpen={setShowInviteModal} />
     </div>
