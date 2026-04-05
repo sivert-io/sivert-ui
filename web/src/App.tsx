@@ -10,10 +10,30 @@ import { useAuth } from "./auth/useAuth";
 import { AboutView } from "./views/AboutView";
 import { PrivacyPolicyView } from "./views/PrivacyPolicyView";
 import { PageTransition } from "./components/PageTransition";
+import { Toaster } from "sonner";
+import { useNotifications } from "./notifications/useNotifications";
+
+function RealtimeEffects() {
+  useNotifications();
+  return null;
+}
 
 function AppLayout() {
   return (
-    <div className="min-h-screen">
+    <div>
+      <Toaster
+        toastOptions={{
+          classNames: {
+            toast: "app-toast",
+            title: "app-toast-title",
+            description: "app-toast-description",
+            closeButton: "app-toast-close",
+            actionButton: "app-toast-action",
+            cancelButton: "app-toast-cancel",
+          },
+        }}
+      />
+      <RealtimeEffects />
       <Navbar isInQueue={false} />
       <main className="w-full overflow-x-hidden">
         <div className="mx-auto w-full max-w-7xl px-4 pt-24 pb-12">

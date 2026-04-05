@@ -1,24 +1,31 @@
 import { useEffect, useState } from "react";
 import { Modal } from "../Modal";
-import { findPlayer } from "../../lib/findPlayer";
 import type { PublicProfile } from "../../auth/types";
 import { PlayerCard } from "../PlayerCard";
+import { API_BASE_URL } from "../../lib/api";
+import { toast } from "sonner";
+import { useSocket } from "../../socket/useSocket";
 
 interface InviteModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
 }
 
-export function InviteModal({ open, setOpen }: InviteModalProps) {
-  const friends = [
-    "76561198069153901",
-    "76561198196328799",
-    "76561198026027740",
-    "76561199486434142",
-  ];
+type FriendInviteStatus =
+  | "available"
+  | "invited"
+  | "in_lobby"
+  | "offline"
+  | "in_match";
 
-  const [players, setPlayers] = useState<PublicProfile[]>([]);
-  const [invitedPlayerIds, setInvitedPlayerIds] = useState<string[]>([]);
+type InviteableFriend = {
+  profile: PublicProfile;
+  status: FriendInviteStatus;
+};
+
+export function InviteModal({ open, setOpen }: InviteModalProps) {
+  const { socket } = useSocket();
+  const [players, setPlayers] = useState<InviteableFriend[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -32,22 +39,18 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
       setHasError(false);
 
       try {
-        const results = await Promise.all(
-          friends.map(async (steamId) => {
-            try {
-              return await findPlayer(steamId);
-            } catch {
-              return null;
-            }
-          }),
-        );
+        const response = await fetch(`${API_BASE_URL}/lobbies/current/friends`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load friends");
+        }
+
+        const data = await response.json();
 
         if (!cancelled) {
-          setPlayers(
-            results.filter(
-              (player): player is PublicProfile => player !== null,
-            ),
-          );
+          setPlayers(data.players ?? []);
         }
       } catch {
         if (!cancelled) {
@@ -68,13 +71,89 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
     };
   }, [open]);
 
-  function handleInvite(player: PublicProfile) {
-    if (invitedPlayerIds.includes(player.steamId)) {
+  useEffect(() => {
+    function onInviteDeclined(payload: { steamId?: string }) {
+      if (!payload.steamId) return;
+
+      setPlayers((current) =>
+        current.map((item) =>
+          item.profile.steamId === payload.steamId
+            ? { ...item, status: "available" }
+            : item,
+        ),
+      );
+    }
+
+    function onFriendRemoved(payload: { steamId?: string }) {
+      if (!payload.steamId) return;
+
+      setPlayers((current) =>
+        current.filter((item) => item.profile.steamId !== payload.steamId),
+      );
+    }
+
+    socket.on("lobby_invite:declined", onInviteDeclined);
+    socket.on("friend:removed", onFriendRemoved);
+
+    return () => {
+      socket.off("lobby_invite:declined", onInviteDeclined);
+      socket.off("friend:removed", onFriendRemoved);
+    };
+  }, [socket]);
+
+  function handleInvite(player: InviteableFriend) {
+    if (player.status !== "available") {
       return;
     }
 
-    setInvitedPlayerIds((current) => [...current, player.steamId]);
-    console.log("Inviting:", player.steamId);
+    void (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/invites`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            steamId: player.profile.steamId,
+          }),
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(data?.error ?? "Failed to send invite");
+        }
+
+        setPlayers((current) =>
+          current.map((item) =>
+            item.profile.steamId === player.profile.steamId
+              ? { ...item, status: "invited" }
+              : item,
+          ),
+        );
+
+        toast("Invite sent");
+      } catch (error) {
+        console.error(error);
+        toast(error instanceof Error ? error.message : "Failed to send invite");
+      }
+    })();
+  }
+
+  function toStatusLabel(status: FriendInviteStatus): string | undefined {
+    switch (status) {
+      case "invited":
+        return "invited";
+      case "in_lobby":
+        return "in lobby";
+      case "offline":
+        return "offline";
+      case "in_match":
+        return "in match";
+      default:
+        return undefined;
+    }
   }
 
   return (
@@ -87,21 +166,25 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
         )}
 
         {hasError && (
-          <p className="text-sm text-red-400">Failed to load players.</p>
+          <p className="text-sm text-red-400">Failed to load friends.</p>
         )}
 
-        {!isLoading && !hasError && (
+        {!isLoading && !hasError && players.length === 0 && (
+          <p className="text-sm text-primary/70">No friends found.</p>
+        )}
+
+        {!isLoading && !hasError && players.length > 0 && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {players.map((player) => {
-              const isInvited = invitedPlayerIds.includes(player.steamId);
+              const isDisabled = player.status !== "available";
 
               return (
                 <PlayerCard
-                  key={player.steamId}
-                  playerData={player}
+                  key={player.profile.steamId}
+                  playerData={player.profile}
                   onClick={() => handleInvite(player)}
-                  disabled={isInvited}
-                  statusLabel={isInvited ? "invited" : undefined}
+                  disabled={isDisabled}
+                  statusLabel={toStatusLabel(player.status)}
                 />
               );
             })}

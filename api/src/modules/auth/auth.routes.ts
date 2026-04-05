@@ -57,6 +57,36 @@ router.get("/me", (req, res) => {
   });
 });
 
+// GET /notifications
+router.get("/", requireAuth, async (req, res, next) => {
+  try {
+    const result = await db.query(
+      `
+      SELECT id, type, title, body, data, read_at, created_at
+      FROM notifications
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 50
+      `,
+      [req.user!.id],
+    );
+
+    return res.status(200).json({
+      notifications: result.rows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        title: row.title,
+        body: row.body,
+        data: row.data,
+        readAt: row.read_at,
+        createdAt: row.created_at,
+      })),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/logout", requireAuth, async (req, res, next) => {
   try {
     if (req.sessionId) {

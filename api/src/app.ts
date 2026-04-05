@@ -3,6 +3,10 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes.js";
 import { sessionMiddleware } from "./middleware/session.middleware.js";
 import { config } from "./config.js";
+import inviteRoutes from "./modules/invites/invite.routes.js";
+import notificationRoutes from "./modules/notifications/notification.routes.js";
+import lobbyRoutes from "./modules/lobbies/lobby.routes.js";
+import friendRoutes from "./modules/friends/friend.routes.js";
 
 export const app = express();
 
@@ -45,6 +49,11 @@ app.get("/protected", (req, res) => {
     user: req.user,
   });
 });
+
+app.use("/invites", inviteRoutes);
+app.use("/notifications", notificationRoutes);
+app.use("/lobbies", lobbyRoutes);
+app.use("/friends", friendRoutes);
 
 app.use(
   (

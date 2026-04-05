@@ -1,16 +1,31 @@
+// api/src/server.ts
+import { createServer } from "node:http";
+import { Server } from "socket.io";
 import { app } from "./app.js";
 import { config } from "./config.js";
-import { db } from "./db.js";
+import { registerRealtime } from "./realtime/index.js";
+import { initDb } from "./lib/init-db.js";
 
-async function main() {
-  await db.query("SELECT 1");
+async function bootstrap() {
+  await initDb();
 
-  app.listen(config.PORT, () => {
-    console.log(`API running on ${config.API_ORIGIN}`);
+  const httpServer = createServer(app);
+
+  const io = new Server(httpServer, {
+    cors: {
+      origin: config.APP_ORIGIN,
+      credentials: true,
+    },
+  });
+
+  registerRealtime(io);
+
+  httpServer.listen(config.PORT, () => {
+    console.log(`API listening on :${config.PORT}`);
   });
 }
 
-main().catch((error) => {
-  console.error("Failed to start server", error);
+bootstrap().catch((error) => {
+  console.error("Failed to bootstrap server", error);
   process.exit(1);
 });

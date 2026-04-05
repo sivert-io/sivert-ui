@@ -1,5 +1,3 @@
-import type React from "react";
-
 export type ButtonVariant = "solid" | "outline" | "ghost";
 
 export type ButtonColor =
@@ -10,10 +8,14 @@ export type ButtonColor =
   | "white"
   | "black";
 
+export type ButtonSize = "md" | "sm";
+
 export type ButtonProps = {
   children: React.ReactNode;
   variant?: ButtonVariant;
   color?: ButtonColor;
+  size?: ButtonSize;
   square?: boolean;
   href?: string;
+  className?: string;
 };

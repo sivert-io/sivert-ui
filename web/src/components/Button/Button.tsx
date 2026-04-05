@@ -1,7 +1,12 @@
 import cn from "classnames";
 import type React from "react";
 import { Link } from "../Link";
-import type { ButtonColor, ButtonProps, ButtonVariant } from "./types";
+import type {
+  ButtonColor,
+  ButtonProps,
+  ButtonVariant,
+  ButtonSize,
+} from "./types";
 
 const baseStyles =
   "rounded-full transform-gpu transition-transform duration-100 ease-out active:scale-[0.9] disabled:scale-[1] disabled:opacity-50 disabled:cursor-default!";
@@ -33,6 +38,11 @@ const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
   },
 };
 
+const sizeStyles: Record<ButtonSize, string> = {
+  md: "text-sm px-4 py-2",
+  sm: "text-xs h-8 px-3",
+};
+
 type NativeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 type Props = ButtonProps & NativeButtonProps;
 
@@ -40,6 +50,7 @@ export function Button({
   children,
   variant = "solid",
   color = "primary",
+  size = "md",
   square = false,
   href,
   className = "",
@@ -50,7 +61,7 @@ export function Button({
     "font-medium flex items-center justify-center gap-2",
     baseStyles,
     styles[variant][color],
-    square ? "p-3" : "px-4 py-2",
+    square ? "p-3" : sizeStyles[size],
     className,
   );
 

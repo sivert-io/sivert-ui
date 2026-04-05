@@ -9,6 +9,9 @@ import { InviteModal } from "./InviteModal";
 import { Spinner } from "../Spinner";
 import { Button } from "../Button";
 import { HoverDropdown } from "../Dropdown/HoverDropdown";
+import { API_BASE_URL } from "../../lib/api";
+import { toast } from "sonner";
+import { MdClose } from "react-icons/md";
 
 function formatElapsed(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -32,7 +35,7 @@ function DropdownActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm transition hover:bg-white/10",
+        "flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm transition hover:bg-white/10 text-nowrap",
         danger ? "text-red-300" : "text-primary",
       )}
     >
@@ -41,13 +44,95 @@ function DropdownActionButton({
   );
 }
 
+type CurrentLobbyResponse = {
+  lobby: {
+    lobbyId: string;
+    members: Array<{
+      userId: string;
+      steamId: string;
+      personaName: string | null;
+      avatarSmall: string | null;
+      avatarMedium: string | null;
+      avatarLarge: string | null;
+      rank: number | null;
+      role: string;
+      ready: boolean;
+    }>;
+  };
+};
+
 export function Lobby({ user }: LobbyProps) {
-  const { players } = useLobby(user);
   const navigate = useNavigate();
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [queueStartTime, setQueueStartTime] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [lobbyId, setLobbyId] = useState<string | null>(null);
+  const [isLobbyLoading, setIsLobbyLoading] = useState(true);
+
+  useEffect(() => {
+    function onLobbyChanged(event: Event) {
+      const customEvent = event as CustomEvent<{ lobbyId?: string }>;
+      const nextLobbyId = customEvent.detail?.lobbyId;
+
+      if (!nextLobbyId) return;
+
+      setLobbyId(nextLobbyId);
+      setQueueStartTime(null);
+      setElapsedMs(0);
+      setShowInviteModal(false);
+    }
+
+    window.addEventListener("lobby:changed", onLobbyChanged);
+
+    return () => {
+      window.removeEventListener("lobby:changed", onLobbyChanged);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLobby() {
+      try {
+        setIsLobbyLoading(true);
+
+        const response = await fetch(`${API_BASE_URL}/lobbies/current`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load current lobby");
+        }
+
+        const data: CurrentLobbyResponse = await response.json();
+
+        if (!cancelled) {
+          setLobbyId(data.lobby.lobbyId);
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          toast("Failed to load lobby");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLobbyLoading(false);
+        }
+      }
+    }
+
+    void loadLobby();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const { players } = useLobby({
+    user,
+    lobbyId: lobbyId ?? "",
+  });
 
   const isInQueue = queueStartTime !== null;
   const elapsedLabel = isInQueue ? formatElapsed(elapsedMs) : null;
@@ -75,7 +160,7 @@ export function Lobby({ user }: LobbyProps) {
   }
 
   function openInviteModal() {
-    if (isInQueue) return;
+    if (isInQueue || !lobbyId) return;
     setShowInviteModal(true);
   }
 
@@ -85,6 +170,30 @@ export function Lobby({ user }: LobbyProps) {
 
   function handleKickFromLobby(steamId: string) {
     console.log("Kick from lobby:", steamId);
+  }
+
+  async function handleLeaveLobby() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lobbies/current/leave`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Failed to leave lobby");
+      }
+
+      setLobbyId(data.lobby.lobbyId);
+      setQueueStartTime(null);
+      setElapsedMs(0);
+      setShowInviteModal(false);
+      toast("You left the lobby");
+    } catch (error) {
+      console.error(error);
+      toast(error instanceof Error ? error.message : "Failed to leave lobby");
+    }
   }
 
   function renderPlayerSlot(
@@ -97,7 +206,7 @@ export function Lobby({ user }: LobbyProps) {
         <PlayerCard
           playerData={null}
           onClick={openInviteModal}
-          disableInvite={isInQueue}
+          disableInvite={isInQueue || isLobbyLoading || !lobbyId}
           scale={scale}
         />
       );
@@ -172,16 +281,29 @@ export function Lobby({ user }: LobbyProps) {
         </AnimatePresence>
 
         <motion.div
-          className="flex flex-col items-center justify-end"
+          className="flex items-center gap-2 relative"
           initial={{ height: 44 }}
-          animate={{ height: isInQueue ? 170 : 40 }}
+          animate={{ height: isInQueue ? 210 : 86 }}
         >
           <Button
             onClick={handleToggleQueue}
             variant={isInQueue ? "outline" : "solid"}
+            disabled={isLobbyLoading || !lobbyId}
           >
             {isInQueue ? "Stop searching" : "Find match"}
           </Button>
+
+          {!isInQueue && players.filter(Boolean).length > 1 && (
+            <Button
+              onClick={handleLeaveLobby}
+              square
+              variant="ghost"
+              disabled={isLobbyLoading || !lobbyId}
+              className="absolute -right-12"
+            >
+              <MdClose />
+            </Button>
+          )}
         </motion.div>
       </div>
 
