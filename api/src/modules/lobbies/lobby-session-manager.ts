@@ -12,6 +12,7 @@ type LobbyMemberSnapshot = {
 type LobbyMemberPresence = LobbyMemberSnapshot & {
   socketIds: Set<string>;
   connectedAt: number | null;
+  disconnectedAt: number | null;
   ready: boolean;
 };
 
@@ -31,9 +32,56 @@ type JoinLobbyUser = {
   role: string;
 };
 
+type OfflineExpiredHandler = (params: {
+  lobbyId: string;
+  userId: string;
+}) => Promise<void>;
+
 export class LobbySessionManager {
+  private static readonly OFFLINE_EVICTION_MS = 60_000;
+
   private lobbies = new Map<string, LobbyRuntimeState>();
   private socketToLobby = new Map<string, string>();
+  private offlineTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private offlineExpiredHandler: OfflineExpiredHandler | null = null;
+
+  setOfflineExpiredHandler(handler: OfflineExpiredHandler) {
+    this.offlineExpiredHandler = handler;
+  }
+
+  private memberKey(lobbyId: string, userId: string) {
+    return `${lobbyId}:${userId}`;
+  }
+
+  private clearOfflineTimer(lobbyId: string, userId: string) {
+    const key = this.memberKey(lobbyId, userId);
+    const timer = this.offlineTimers.get(key);
+
+    if (timer) {
+      clearTimeout(timer);
+      this.offlineTimers.delete(key);
+    }
+  }
+
+  private scheduleOfflineTimer(lobbyId: string, userId: string) {
+    this.clearOfflineTimer(lobbyId, userId);
+
+    const key = this.memberKey(lobbyId, userId);
+
+    const timer = setTimeout(async () => {
+      this.offlineTimers.delete(key);
+
+      const lobby = this.lobbies.get(lobbyId);
+      const member = lobby?.members.get(userId);
+
+      if (!lobby || !member) return;
+      if (member.socketIds.size > 0) return;
+
+      await this.offlineExpiredHandler?.({ lobbyId, userId });
+    }, LobbySessionManager.OFFLINE_EVICTION_MS);
+
+    this.offlineTimers.set(key, timer);
+  }
 
   joinLobby(lobbyId: string, user: JoinLobbyUser, socketId: string) {
     let lobby = this.lobbies.get(lobbyId);
@@ -60,6 +108,7 @@ export class LobbySessionManager {
         role: user.role,
         socketIds: new Set(),
         connectedAt: null,
+        disconnectedAt: null,
         ready: false,
       };
       lobby.members.set(user.id, member);
@@ -73,9 +122,16 @@ export class LobbySessionManager {
       member.role = user.role;
     }
 
+    const wasOffline = member.socketIds.size === 0;
+
     member.socketIds.add(socketId);
-    member.connectedAt ??= Date.now();
     this.socketToLobby.set(socketId, lobbyId);
+
+    if (wasOffline) {
+      member.connectedAt = Date.now();
+      member.disconnectedAt = null;
+      this.clearOfflineTimer(lobbyId, user.id);
+    }
 
     return this.serializeLobby(lobbyId);
   }
@@ -94,7 +150,8 @@ export class LobbySessionManager {
     this.socketToLobby.delete(socketId);
 
     if (member.socketIds.size === 0) {
-      member.connectedAt = null;
+      member.disconnectedAt = Date.now();
+      this.scheduleOfflineTimer(lobbyId, userId);
     }
 
     return { lobbyId, state: this.serializeLobby(lobbyId) };
@@ -106,6 +163,8 @@ export class LobbySessionManager {
 
     const member = lobby.members.get(userId);
     if (!member) return null;
+
+    this.clearOfflineTimer(lobbyId, userId);
 
     for (const socketId of member.socketIds) {
       this.socketToLobby.delete(socketId);
@@ -147,6 +206,8 @@ export class LobbySessionManager {
         role: m.role,
         connectedSockets: m.socketIds.size,
         connected: m.socketIds.size > 0,
+        connectedAt: m.connectedAt,
+        disconnectedAt: m.disconnectedAt,
         ready: m.ready,
       })),
     };

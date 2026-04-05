@@ -1,6 +1,6 @@
 import cn from "classnames";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useLobby } from "../../hooks/useLobby";
 import { PlayerCard } from "../PlayerCard";
@@ -20,6 +20,21 @@ function formatElapsed(ms: number) {
   const seconds = totalSeconds % 60;
 
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function formatOfflineDuration(disconnectedAt?: number | null) {
+  if (!disconnectedAt) return "Offline";
+
+  const elapsedMs = Date.now() - disconnectedAt;
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `Offline for ${minutes}:${seconds.toString().padStart(2, "0")}`;
+  }
+
+  return `Offline for ${seconds}s`;
 }
 
 function DropdownActionButton({
@@ -58,6 +73,10 @@ type CurrentLobbyResponse = {
       rank: number | null;
       role: string;
       ready: boolean;
+      connected: boolean;
+      connectedSockets: number;
+      connectedAt?: number | null;
+      disconnectedAt?: number | null;
     }>;
   };
 };
@@ -70,6 +89,7 @@ export function Lobby({ user }: LobbyProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [lobbyId, setLobbyId] = useState<string | null>(null);
   const [isLobbyLoading, setIsLobbyLoading] = useState(true);
+  const [, setPresenceNow] = useState(Date.now());
 
   useEffect(() => {
     function onLobbyChanged(event: Event) {
@@ -148,6 +168,21 @@ export function Lobby({ user }: LobbyProps) {
     return () => window.clearInterval(interval);
   }, [queueStartTime]);
 
+  const hasOfflinePlayers = useMemo(
+    () => players.some((player) => player && player.connected === false),
+    [players],
+  );
+
+  useEffect(() => {
+    if (!hasOfflinePlayers) return;
+
+    const interval = window.setInterval(() => {
+      setPresenceNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [hasOfflinePlayers]);
+
   function handleToggleQueue() {
     if (queueStartTime === null) {
       const startedAt = Date.now();
@@ -197,6 +232,21 @@ export function Lobby({ user }: LobbyProps) {
     }
   }
 
+  function getStatusLabel(player: (typeof players)[number] | null | undefined) {
+    if (!player) return undefined;
+    return undefined;
+  }
+
+  function getPresenceTooltip(
+    player: (typeof players)[number] | null | undefined,
+  ) {
+    if (!player) return undefined;
+    if (player.connected === false) {
+      return formatOfflineDuration(player.disconnectedAt);
+    }
+    return "Online";
+  }
+
   function renderPlayerSlot(
     player: (typeof players)[number] | null | undefined,
     scale = 1,
@@ -213,14 +263,18 @@ export function Lobby({ user }: LobbyProps) {
       );
     }
 
+    const playerCard = (
+      <PlayerCard
+        playerData={player}
+        onClick={() => handleViewProfile(player.steamId)}
+        scale={scale}
+        statusLabel={getStatusLabel(player)}
+        title={getPresenceTooltip(player)}
+      />
+    );
+
     if (isInQueue || isOurselves) {
-      return (
-        <PlayerCard
-          playerData={player}
-          onClick={() => handleViewProfile(player.steamId)}
-          scale={scale}
-        />
-      );
+      return playerCard;
     }
 
     return (
@@ -228,13 +282,7 @@ export function Lobby({ user }: LobbyProps) {
         placement="bottom-center"
         hoverable
         closeDelay={120}
-        trigger={() => (
-          <PlayerCard
-            playerData={player}
-            onClick={() => handleViewProfile(player.steamId)}
-            scale={scale}
-          />
-        )}
+        trigger={() => playerCard}
       >
         <div className="flex flex-col gap-1">
           <DropdownActionButton

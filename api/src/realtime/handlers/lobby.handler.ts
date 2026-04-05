@@ -5,7 +5,52 @@ import { lobbyService } from "../../modules/lobbies/lobby.service.js";
 import { rooms } from "../rooms.js";
 import { SOCKET_EVENTS } from "../events.js";
 
+function mergeLobbyStateWithPresence(
+  lobbyState: Awaited<ReturnType<typeof lobbyService.getLobbyState>> | null,
+) {
+  if (!lobbyState) return null;
+
+  const presenceState = lobbySessionManager.serializeLobby(lobbyState.lobbyId);
+
+  return {
+    ...lobbyState,
+    members: lobbyState.members.map((member) => {
+      const presenceMember = presenceState?.members.find(
+        (item) => item.userId === member.userId,
+      );
+
+      return {
+        ...member,
+        connectedSockets: presenceMember?.connectedSockets ?? 0,
+        connected: presenceMember?.connected ?? false,
+      };
+    }),
+  };
+}
+
+let offlineHandlerRegistered = false;
+
+function ensureOfflineHandlerRegistered(io: Server) {
+  if (offlineHandlerRegistered) return;
+  offlineHandlerRegistered = true;
+
+  lobbySessionManager.setOfflineExpiredHandler(async ({ lobbyId, userId }) => {
+    const dbResult = await lobbyService.leaveLobbyMember(lobbyId, userId);
+    lobbySessionManager.explicitLeaveLobby(lobbyId, userId);
+
+    if (!dbResult) return;
+
+    const mergedState = dbResult.state
+      ? mergeLobbyStateWithPresence(dbResult.state)
+      : null;
+
+    io.to(rooms.lobby(lobbyId)).emit(SOCKET_EVENTS.LOBBY_STATE, mergedState);
+  });
+}
+
 export function registerLobbyHandlers(io: Server, socket: Socket) {
+  ensureOfflineHandlerRegistered(io);
+
   const user = socket.data.user;
   if (!user) return;
 
@@ -32,28 +77,18 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
         return ack?.({ ok: false, error: "Not a member of this lobby" });
       }
 
+      const previousLobbyId = socket.data.currentLobbyId;
+      if (previousLobbyId && previousLobbyId !== lobbyId) {
+        socket.leave(rooms.lobby(previousLobbyId));
+      }
+
       socket.join(rooms.lobby(lobbyId));
       socket.data.currentLobbyId = lobbyId;
 
       lobbySessionManager.joinLobby(lobbyId, user, socket.id);
 
       const state = await lobbyService.getLobbyState(lobbyId);
-      const presenceState = lobbySessionManager.serializeLobby(lobbyId);
-
-      const mergedState = {
-        ...state,
-        members: state.members.map((member) => {
-          const presenceMember = presenceState?.members.find(
-            (item) => item.userId === member.userId,
-          );
-
-          return {
-            ...member,
-            connectedSockets: presenceMember?.connectedSockets ?? 0,
-            connected: presenceMember?.connected ?? false,
-          };
-        }),
-      };
+      const mergedState = mergeLobbyStateWithPresence(state);
 
       io.to(rooms.lobby(lobbyId)).emit(SOCKET_EVENTS.LOBBY_STATE, mergedState);
       ack?.({ ok: true, state: mergedState });
@@ -68,37 +103,19 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
       try {
         await db.query(
           `
-        UPDATE lobby_members
-        SET ready = $3
-        WHERE lobby_id = $1
-          AND user_id = $2
-          AND left_at IS NULL
-          AND kicked_at IS NULL
-        `,
+          UPDATE lobby_members
+          SET ready = $3
+          WHERE lobby_id = $1
+            AND user_id = $2
+            AND left_at IS NULL
+            AND kicked_at IS NULL
+          `,
           [lobbyId, user.id, ready],
         );
 
-        const presenceState = lobbySessionManager.setReady(
-          lobbyId,
-          user.id,
-          ready,
-        );
+        lobbySessionManager.setReady(lobbyId, user.id, ready);
         const state = await lobbyService.getLobbyState(lobbyId);
-
-        const mergedState = {
-          ...state,
-          members: state.members.map((member) => {
-            const presenceMember = presenceState?.members.find(
-              (item) => item.userId === member.userId,
-            );
-
-            return {
-              ...member,
-              connectedSockets: presenceMember?.connectedSockets ?? 0,
-              connected: presenceMember?.connected ?? false,
-            };
-          }),
-        };
+        const mergedState = mergeLobbyStateWithPresence(state);
 
         io.to(rooms.lobby(lobbyId)).emit(
           SOCKET_EVENTS.LOBBY_STATE,
@@ -117,22 +134,7 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
     if (!result?.lobbyId) return;
 
     const state = await lobbyService.getLobbyState(result.lobbyId);
-    const presenceState = lobbySessionManager.serializeLobby(result.lobbyId);
-
-    const mergedState = {
-      ...state,
-      members: state.members.map((member) => {
-        const presenceMember = presenceState?.members.find(
-          (item) => item.userId === member.userId,
-        );
-
-        return {
-          ...member,
-          connectedSockets: presenceMember?.connectedSockets ?? 0,
-          connected: presenceMember?.connected ?? false,
-        };
-      }),
-    };
+    const mergedState = mergeLobbyStateWithPresence(state);
 
     io.to(rooms.lobby(result.lobbyId)).emit(
       SOCKET_EVENTS.LOBBY_STATE,

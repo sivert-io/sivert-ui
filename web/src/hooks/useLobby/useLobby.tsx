@@ -7,7 +7,7 @@ import type {
   LobbyMember,
 } from "./types";
 
-function toPlayer(member: LobbyMember) {
+function toPlayer(member: LobbyMember): Exclude<LobbyPlayerSlot, null> {
   return {
     steamId: member.steamId,
     personaName: member.personaName,
@@ -16,6 +16,11 @@ function toPlayer(member: LobbyMember) {
     avatarLarge: member.avatarLarge,
     rank: member.rank,
     createdAt: new Date().toISOString(),
+    ready: member.ready,
+    connected: member.connected,
+    connectedSockets: member.connectedSockets,
+    connectedAt: member.connectedAt ?? null,
+    disconnectedAt: member.disconnectedAt ?? null,
   };
 }
 
@@ -53,7 +58,21 @@ export function useLobby({ user, lobbyId }: UseLobbyProps) {
     let mapped: LobbyPlayerSlot[];
 
     if (!lobbyState?.members?.length) {
-      mapped = [user];
+      mapped = [
+        {
+          steamId: user.steamId,
+          personaName: user.personaName,
+          avatarSmall: user.avatarSmall,
+          avatarMedium: user.avatarMedium,
+          avatarLarge: user.avatarLarge,
+          rank: user.rank,
+          createdAt: new Date().toISOString(),
+          connected: true,
+          connectedSockets: 1,
+          connectedAt: null,
+          disconnectedAt: null,
+        },
+      ];
     } else {
       mapped = lobbyState.members.map(toPlayer);
 

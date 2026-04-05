@@ -1,4 +1,5 @@
 import { db } from "../../db.js";
+import { userPresenceManager } from "../../realtime/user-presence.js";
 
 type ActiveLobbyRow = {
   lobby_id: string;
@@ -121,6 +122,108 @@ export class LobbyService {
     };
   }
 
+  async expireStaleInvites(lobbyId: string, invitedUserId?: string) {
+    const params: string[] = [lobbyId];
+    const invitedUserClause = invitedUserId ? `AND invited_user_id = $2` : "";
+
+    if (invitedUserId) {
+      params.push(invitedUserId);
+    }
+
+    const result = await db.query<{
+      id: string;
+      invited_user_id: string;
+    }>(
+      `
+      UPDATE lobby_invites
+      SET status = 'expired',
+          responded_at = COALESCE(responded_at, NOW())
+      WHERE lobby_id = $1
+        ${invitedUserClause}
+        AND status = 'pending'
+        AND expires_at IS NOT NULL
+        AND expires_at <= NOW()
+      RETURNING id, invited_user_id
+      `,
+      params,
+    );
+
+    return result.rows;
+  }
+
+  async leaveLobbyMember(lobbyId: string, userId: string) {
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const leaveResult = await client.query(
+        `
+        UPDATE lobby_members
+        SET left_at = NOW()
+        WHERE lobby_id = $1
+          AND user_id = $2
+          AND left_at IS NULL
+          AND kicked_at IS NULL
+        RETURNING user_id
+        `,
+        [lobbyId, userId],
+      );
+
+      if (!leaveResult.rowCount) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+
+      const remainingMembersResult = await client.query<{ count: string }>(
+        `
+        SELECT COUNT(*)::text AS count
+        FROM lobby_members
+        WHERE lobby_id = $1
+          AND left_at IS NULL
+          AND kicked_at IS NULL
+        `,
+        [lobbyId],
+      );
+
+      const remainingMembers = Number(
+        remainingMembersResult.rows[0]?.count ?? "0",
+      );
+
+      if (remainingMembers === 0) {
+        await client.query(
+          `
+          UPDATE lobbies
+          SET status = 'closed',
+              closed_at = NOW()
+          WHERE id = $1
+            AND closed_at IS NULL
+          `,
+          [lobbyId],
+        );
+
+        await client.query("COMMIT");
+
+        return {
+          lobbyId,
+          state: null,
+        };
+      }
+
+      await client.query("COMMIT");
+
+      return {
+        lobbyId,
+        state: await this.getLobbyState(lobbyId),
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async leaveCurrentLobbyAndCreateNewLobby(userId: string) {
     const client = await db.connect();
 
@@ -157,6 +260,30 @@ export class LobbyService {
           `,
           [userId, currentLobbyId],
         );
+
+        const remainingMembersResult = await client.query<{ count: string }>(
+          `
+          SELECT COUNT(*)::text AS count
+          FROM lobby_members
+          WHERE lobby_id = $1
+            AND left_at IS NULL
+            AND kicked_at IS NULL
+          `,
+          [currentLobbyId],
+        );
+
+        if (Number(remainingMembersResult.rows[0]?.count ?? "0") === 0) {
+          await client.query(
+            `
+            UPDATE lobbies
+            SET status = 'closed',
+                closed_at = NOW()
+            WHERE id = $1
+              AND closed_at IS NULL
+            `,
+            [currentLobbyId],
+          );
+        }
       }
 
       const lobbyResult = await client.query<{ id: string }>(
@@ -193,37 +320,40 @@ export class LobbyService {
   }
 
   async getInviteCandidates(userId: string, lobbyId: string) {
+    await this.expireStaleInvites(lobbyId);
+
     const result = await db.query(
       `
-    SELECT
-      u.steam_id,
-      u.persona_name,
-      u.avatar_small,
-      u.avatar_medium,
-      u.avatar_large,
-      u.rank,
-      u.created_at
-    FROM friendships f
-    INNER JOIN users u
-      ON u.id = f.friend_user_id
-    WHERE f.user_id = $1
-      AND NOT EXISTS (
-        SELECT 1
-        FROM lobby_members lm
-        WHERE lm.lobby_id = $2
-          AND lm.user_id = u.id
-          AND lm.left_at IS NULL
-          AND lm.kicked_at IS NULL
-      )
-      AND NOT EXISTS (
-        SELECT 1
-        FROM lobby_invites li
-        WHERE li.lobby_id = $2
-          AND li.invited_user_id = u.id
-          AND li.status = 'pending'
-      )
-    ORDER BY u.persona_name NULLS LAST, u.steam_id
-    `,
+      SELECT
+        u.steam_id,
+        u.persona_name,
+        u.avatar_small,
+        u.avatar_medium,
+        u.avatar_large,
+        u.rank,
+        u.created_at
+      FROM friendships f
+      INNER JOIN users u
+        ON u.id = f.friend_user_id
+      WHERE f.user_id = $1
+        AND NOT EXISTS (
+          SELECT 1
+          FROM lobby_members lm
+          WHERE lm.lobby_id = $2
+            AND lm.user_id = u.id
+            AND lm.left_at IS NULL
+            AND lm.kicked_at IS NULL
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM lobby_invites li
+          WHERE li.lobby_id = $2
+            AND li.invited_user_id = u.id
+            AND li.status = 'pending'
+            AND li.expires_at > NOW()
+        )
+      ORDER BY u.persona_name NULLS LAST, u.steam_id
+      `,
       [userId, lobbyId],
     );
 
@@ -238,68 +368,78 @@ export class LobbyService {
     }));
   }
 
-async getFriendsForLobby(userId: string, lobbyId: string) {
-  const result = await db.query<{
-    steam_id: string;
-    persona_name: string | null;
-    avatar_small: string | null;
-    avatar_medium: string | null;
-    avatar_large: string | null;
-    rank: number | null;
-    created_at: string;
-    is_in_lobby: boolean;
-    has_pending_invite: boolean;
-  }>(
-    `
-    SELECT
-      u.steam_id,
-      u.persona_name,
-      u.avatar_small,
-      u.avatar_medium,
-      u.avatar_large,
-      u.rank,
-      u.created_at,
-      EXISTS (
-        SELECT 1
-        FROM lobby_members lm
-        WHERE lm.lobby_id = $2
-          AND lm.user_id = u.id
-          AND lm.left_at IS NULL
-          AND lm.kicked_at IS NULL
-      ) AS is_in_lobby,
-      EXISTS (
-        SELECT 1
-        FROM lobby_invites li
-        WHERE li.lobby_id = $2
-          AND li.invited_user_id = u.id
-          AND li.status = 'pending'
-      ) AS has_pending_invite
-    FROM friendships f
-    INNER JOIN users u ON u.id = f.friend_user_id
-    WHERE f.user_id = $1
-    ORDER BY u.persona_name NULLS LAST, u.steam_id
-    `,
-    [userId, lobbyId],
-  );
+  async getFriendsForLobby(userId: string, lobbyId: string) {
+    await this.expireStaleInvites(lobbyId);
 
-  return result.rows.map((row) => ({
-    profile: {
-      steamId: row.steam_id,
-      personaName: row.persona_name,
-      avatarSmall: row.avatar_small,
-      avatarMedium: row.avatar_medium,
-      avatarLarge: row.avatar_large,
-      rank: row.rank,
-      createdAt: row.created_at,
-    },
-    status: row.is_in_lobby
-      ? "in_lobby"
-      : row.has_pending_invite
-        ? "invited"
-        : "available",
-  }));
-}
+    const result = await db.query<{
+      user_id: string;
+      steam_id: string;
+      persona_name: string | null;
+      avatar_small: string | null;
+      avatar_medium: string | null;
+      avatar_large: string | null;
+      rank: number | null;
+      created_at: string;
+      is_in_lobby: boolean;
+      has_pending_invite: boolean;
+    }>(
+      `
+      SELECT
+        u.id AS user_id,
+        u.steam_id,
+        u.persona_name,
+        u.avatar_small,
+        u.avatar_medium,
+        u.avatar_large,
+        u.rank,
+        u.created_at,
+        EXISTS (
+          SELECT 1
+          FROM lobby_members lm
+          WHERE lm.lobby_id = $2
+            AND lm.user_id = u.id
+            AND lm.left_at IS NULL
+            AND lm.kicked_at IS NULL
+        ) AS is_in_lobby,
+        EXISTS (
+          SELECT 1
+          FROM lobby_invites li
+          WHERE li.lobby_id = $2
+            AND li.invited_user_id = u.id
+            AND li.status = 'pending'
+            AND li.expires_at > NOW()
+        ) AS has_pending_invite
+      FROM friendships f
+      INNER JOIN users u ON u.id = f.friend_user_id
+      WHERE f.user_id = $1
+      ORDER BY u.persona_name NULLS LAST, u.steam_id
+      `,
+      [userId, lobbyId],
+    );
 
+    return result.rows.map((row) => {
+      const isOnline = userPresenceManager.isOnline(row.user_id);
+
+      return {
+        profile: {
+          steamId: row.steam_id,
+          personaName: row.persona_name,
+          avatarSmall: row.avatar_small,
+          avatarMedium: row.avatar_medium,
+          avatarLarge: row.avatar_large,
+          rank: row.rank,
+          createdAt: row.created_at,
+        },
+        status: row.is_in_lobby
+          ? "in_lobby"
+          : row.has_pending_invite
+            ? "invited"
+            : isOnline
+              ? "available"
+              : "offline",
+      };
+    });
+  }
 }
 
 export const lobbyService = new LobbyService();

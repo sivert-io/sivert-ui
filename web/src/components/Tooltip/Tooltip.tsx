@@ -79,7 +79,9 @@ export function Tooltip({
 
         <AnimatePresence>
           {isOpen ? (
-            <div className={placementStyles[placement]}>
+            <div
+              className={cn("pointer-events-none", placementStyles[placement])}
+            >
               <motion.div
                 role="tooltip"
                 initial={initial}
@@ -87,7 +89,7 @@ export function Tooltip({
                 exit={initial}
                 transition={{ duration: 0.1, ease: "easeOut" }}
                 className={cn(
-                  "pointer-events-none z-400 w-max max-w-xs rounded-2xl border border-primary/20 bg-background/90 px-3 py-2 text-sm shadow-xl backdrop-blur-xs",
+                  "pointer-events-none z-400 w-max max-w-xs rounded border border-primary/20 bg-background/90 px-3 py-2 text-sm shadow-xl backdrop-blur-xs",
                   contentClassName,
                 )}
               >

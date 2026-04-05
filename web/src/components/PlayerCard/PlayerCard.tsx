@@ -15,6 +15,7 @@ export function PlayerCard({
   disableInvite,
   statusLabel,
   scale = 1,
+  title,
 }: PlayerCardProps) {
   const slotStyle = {
     width: BASE_WIDTH * scale,
@@ -27,6 +28,11 @@ export function PlayerCard({
     transform: "translate(-50%, -50%)",
     transformOrigin: "center",
   } as const;
+
+  const isOffline =
+    !!playerData && "connected" in playerData && playerData.connected === false;
+
+  const resolvedStatusLabel = isOffline ? "OFFLINE" : statusLabel;
 
   return (
     <div style={slotStyle} className="relative shrink-0">
@@ -69,11 +75,13 @@ export function PlayerCard({
               type="button"
               onClick={onClick}
               disabled={disabled}
+              title={title}
               className={cn(
-                "relative flex h-full w-full flex-col items-center justify-center gap-3 rounded-lg border bg-primary/5 p-4 text-left transition hover:bg-primary/10 disabled:cursor-not-allowed",
-                statusLabel === "invited"
-                  ? "border-secondary"
-                  : "border-primary/25",
+                "relative flex h-full w-full flex-col items-center justify-between gap-4 rounded-lg border p-4 text-left transition disabled:cursor-not-allowed",
+                isOffline
+                  ? "border-white/10 bg-white/5 text-primary/60 hover:bg-white/10 opacity-60"
+                  : "border-primary/25 bg-primary/5 hover:bg-primary/10",
+                statusLabel === "invited" && !isOffline && "border-secondary",
               )}
               initial={{ opacity: 0, scale: scale * 0.9 }}
               animate={{ opacity: 1, scale }}
@@ -81,21 +89,41 @@ export function PlayerCard({
               transition={{ duration: 0.2, ease: "easeInOut" }}
             >
               <div className="flex flex-col items-center gap-2">
-                <img
-                  className="h-16 w-16 rounded-full border border-primary/25 bg-background"
-                  src={playerData.avatarLarge || ""}
-                  alt={playerData.personaName ?? "Player avatar"}
-                />
-                <p className="max-w-full truncate text-lg font-bold">
-                  {playerData.personaName}
-                </p>
+                <div className="flex flex-col items-center">
+                  <img
+                    className={cn(
+                      "h-16 w-16 rounded-full bg-background",
+                      isOffline
+                        ? "border border-white/10 opacity-70"
+                        : "border border-primary/25",
+                    )}
+                    src={playerData.avatarLarge || ""}
+                    alt={playerData.personaName ?? "Player avatar"}
+                  />
+                  <p
+                    className={cn(
+                      "max-w-full truncate text-lg font-bold",
+                      isOffline && "text-primary/60",
+                    )}
+                  >
+                    {playerData.personaName}
+                  </p>
+                </div>
+                <div className={cn(isOffline && "opacity-70")}>
+                  <Rank rank={playerData.rank} />
+                </div>
               </div>
 
-              <Rank rank={playerData.rank} />
-
-              {statusLabel ? (
-                <p className="absolute top-1 text-xs font-bold uppercase tracking-wide text-secondary">
-                  {statusLabel}
+              {resolvedStatusLabel ? (
+                <p
+                  className={cn(
+                    "text-xs font-bold uppercase tracking-wide",
+                    resolvedStatusLabel === "invited"
+                      ? "text-secondary"
+                      : "text-primary/60",
+                  )}
+                >
+                  {resolvedStatusLabel}
                 </p>
               ) : null}
             </motion.button>

@@ -20,7 +20,7 @@ function RealtimeEffects() {
 
 function AppLayout() {
   return (
-    <div>
+    <div className="min-h-screen">
       <Toaster
         toastOptions={{
           classNames: {

@@ -3,22 +3,20 @@ import { Logo } from "../components/Logo";
 
 export function LandingView() {
   return (
-    <div className="fixed inset-0 overflow-y-auto py-24">
-      <div className="min-h-full flex flex-col items-center justify-center gap-12 p-8">
-        <div className="flex flex-col gap-4 items-center">
-          <p className="font-medium">Find your</p>
-          <Logo solid />
-        </div>
+    <div className="flex min-h-[calc(100vh-9rem)] flex-col items-center justify-center gap-12 py-12">
+      <div className="flex flex-col items-center gap-4">
+        <p className="font-medium">Find your</p>
+        <Logo solid />
+      </div>
 
-        <div className="w-full aspect-video max-w-6xl bg-black rounded-2xl shrink-0" />
+      <div className="aspect-video w-full max-w-6xl shrink-0 rounded-2xl bg-black" />
 
-        <div className="flex items-center gap-12 w-full justify-center">
-          <Link to="/about">About</Link>
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link target="_blank" to="https://github.com">
-            GitHub
-          </Link>
-        </div>
+      <div className="flex w-full flex-wrap items-center justify-center gap-12">
+        <Link to="/about">About</Link>
+        <Link to="/privacy">Privacy Policy</Link>
+        <Link target="_blank" to="https://github.com">
+          GitHub
+        </Link>
       </div>
     </div>
   );

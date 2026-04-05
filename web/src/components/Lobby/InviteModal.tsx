@@ -34,14 +34,19 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
 
     let cancelled = false;
 
-    async function loadPlayers() {
-      setIsLoading(true);
-      setHasError(false);
+    async function loadPlayers({ silent = false }: { silent?: boolean } = {}) {
+      if (!silent) {
+        setIsLoading(true);
+        setHasError(false);
+      }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/lobbies/current/friends`, {
-          credentials: "include",
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/lobbies/current/friends`,
+          {
+            credentials: "include",
+          },
+        );
 
         if (!response.ok) {
           throw new Error("Failed to load friends");
@@ -51,14 +56,17 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
 
         if (!cancelled) {
           setPlayers(data.players ?? []);
+          setHasError(false);
         }
       } catch {
         if (!cancelled) {
-          setPlayers([]);
-          setHasError(true);
+          if (!silent) {
+            setPlayers([]);
+            setHasError(true);
+          }
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !silent) {
           setIsLoading(false);
         }
       }
@@ -66,8 +74,13 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
 
     void loadPlayers();
 
+    const interval = window.setInterval(() => {
+      void loadPlayers({ silent: true });
+    }, 5000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [open]);
 
@@ -147,10 +160,25 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
         return "invited";
       case "in_lobby":
         return "in lobby";
-      case "offline":
-        return "offline";
       case "in_match":
         return "in match";
+      case "offline":
+      case "available":
+      default:
+        return undefined;
+    }
+  }
+
+  function toStatusTitle(status: FriendInviteStatus): string | undefined {
+    switch (status) {
+      case "invited":
+        return "Invite sent";
+      case "in_lobby":
+        return "Already in your lobby";
+      case "offline":
+        return "Offline";
+      case "in_match":
+        return "Currently in a match";
       default:
         return undefined;
     }
@@ -173,7 +201,7 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
           <p className="text-sm text-primary/70">No friends found.</p>
         )}
 
-        {!isLoading && !hasError && players.length > 0 && (
+        {!hasError && players.length > 0 && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {players.map((player) => {
               const isDisabled = player.status !== "available";
@@ -181,10 +209,14 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
               return (
                 <PlayerCard
                   key={player.profile.steamId}
-                  playerData={player.profile}
+                  playerData={{
+                    ...player.profile,
+                    connected: player.status !== "offline",
+                  }}
                   onClick={() => handleInvite(player)}
                   disabled={isDisabled}
                   statusLabel={toStatusLabel(player.status)}
+                  title={toStatusTitle(player.status)}
                 />
               );
             })}

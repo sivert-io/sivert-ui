@@ -1,10 +1,3 @@
-import type { AuthUser, PublicProfile } from "../../auth/types";
-
-export interface UseLobbyProps {
-  user: AuthUser;
-  lobbyId: string;
-}
-
 export type LobbyMember = {
   userId: string;
   steamId: string;
@@ -14,9 +7,11 @@ export type LobbyMember = {
   avatarLarge: string | null;
   rank: number | null;
   role: string;
-  connectedSockets: number;
-  connected: boolean;
   ready: boolean;
+  connected: boolean;
+  connectedSockets: number;
+  connectedAt?: number | null;
+  disconnectedAt?: number | null;
 };
 
 export type LobbyState = {
@@ -24,4 +19,29 @@ export type LobbyState = {
   members: LobbyMember[];
 } | null;
 
-export type LobbyPlayerSlot = PublicProfile | AuthUser | null;
+export type LobbyPlayerSlot = {
+  steamId: string;
+  personaName: string | null;
+  avatarSmall: string | null;
+  avatarMedium: string | null;
+  avatarLarge: string | null;
+  rank: number | null;
+  createdAt: string;
+  ready?: boolean;
+  connected?: boolean;
+  connectedSockets?: number;
+  connectedAt?: number | null;
+  disconnectedAt?: number | null;
+} | null;
+
+export type UseLobbyProps = {
+  user: {
+    steamId: string;
+    personaName: string | null;
+    avatarSmall: string | null;
+    avatarMedium: string | null;
+    avatarLarge: string | null;
+    rank: number | null;
+  };
+  lobbyId: string;
+};

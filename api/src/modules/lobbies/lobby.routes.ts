@@ -7,13 +7,34 @@ import { lobbySessionManager } from "./lobby-session-manager.js";
 
 const router = Router();
 
+function mergeLobbyStateWithPresence(
+  lobbyState: Awaited<ReturnType<typeof lobbyService.getLobbyState>>,
+) {
+  const presenceState = lobbySessionManager.serializeLobby(lobbyState.lobbyId);
+
+  return {
+    ...lobbyState,
+    members: lobbyState.members.map((member) => {
+      const presenceMember = presenceState?.members.find(
+        (item) => item.userId === member.userId,
+      );
+
+      return {
+        ...member,
+        connectedSockets: presenceMember?.connectedSockets ?? 0,
+        connected: presenceMember?.connected ?? false,
+      };
+    }),
+  };
+}
+
 router.post("/bootstrap", requireAuth, async (req, res, next) => {
   try {
     const lobbyId = await lobbyService.ensureActiveLobbyForUser(req.user!.id);
     const state = await lobbyService.getLobbyState(lobbyId);
 
     return res.status(200).json({
-      lobby: state,
+      lobby: mergeLobbyStateWithPresence(state),
     });
   } catch (error) {
     return next(error);
@@ -26,7 +47,7 @@ router.get("/current", requireAuth, async (req, res, next) => {
     const state = await lobbyService.getLobbyState(lobbyId);
 
     return res.status(200).json({
-      lobby: state,
+      lobby: mergeLobbyStateWithPresence(state),
     });
   } catch (error) {
     return next(error);
@@ -38,29 +59,15 @@ router.post("/current/leave", requireAuth, async (req, res, next) => {
     const { previousLobbyId, newLobbyId } =
       await lobbyService.leaveCurrentLobbyAndCreateNewLobby(req.user!.id);
 
-    const newLobbyState = await lobbyService.getLobbyState(newLobbyId);
     const io = getIo();
 
     if (previousLobbyId) {
+      lobbySessionManager.explicitLeaveLobby(previousLobbyId, req.user!.id);
+
       const previousLobbyState =
         await lobbyService.getLobbyState(previousLobbyId);
-      const previousPresenceState =
-        lobbySessionManager.serializeLobby(previousLobbyId);
-
-      const mergedPreviousLobbyState = {
-        ...previousLobbyState,
-        members: previousLobbyState.members.map((member) => {
-          const presenceMember = previousPresenceState?.members.find(
-            (item) => item.userId === member.userId,
-          );
-
-          return {
-            ...member,
-            connectedSockets: presenceMember?.connectedSockets ?? 0,
-            connected: presenceMember?.connected ?? false,
-          };
-        }),
-      };
+      const mergedPreviousLobbyState =
+        mergeLobbyStateWithPresence(previousLobbyState);
 
       io.to(rooms.lobby(previousLobbyId)).emit(
         "lobby:state",
@@ -68,21 +75,8 @@ router.post("/current/leave", requireAuth, async (req, res, next) => {
       );
     }
 
-    const newPresenceState = lobbySessionManager.serializeLobby(newLobbyId);
-    const mergedNewLobbyState = {
-      ...newLobbyState,
-      members: newLobbyState.members.map((member) => {
-        const presenceMember = newPresenceState?.members.find(
-          (item) => item.userId === member.userId,
-        );
-
-        return {
-          ...member,
-          connectedSockets: presenceMember?.connectedSockets ?? 0,
-          connected: presenceMember?.connected ?? false,
-        };
-      }),
-    };
+    const newLobbyState = await lobbyService.getLobbyState(newLobbyId);
+    const mergedNewLobbyState = mergeLobbyStateWithPresence(newLobbyState);
 
     io.to(rooms.lobby(newLobbyId)).emit("lobby:state", mergedNewLobbyState);
 

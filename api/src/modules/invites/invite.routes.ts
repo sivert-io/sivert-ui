@@ -49,57 +49,75 @@ router.post("/:inviteId/accept", requireAuth, async (req, res, next) => {
         AND l.status <> 'closed'
       ORDER BY lm.joined_at DESC
       LIMIT 1
-  `,
+      `,
       [req.user!.id],
     );
 
     const previousLobbyId = currentLobbyResult.rows[0]?.lobby_id ?? null;
 
-    const inviteResult = await client.query<{
+    const acceptedInviteResult = await client.query<{
       id: string;
       lobby_id: string;
       invited_user_id: string;
-      status: string;
     }>(
-      `
-      SELECT
-        li.id,
-        li.lobby_id,
-        li.invited_user_id,
-        li.status
-      FROM lobby_invites li
-      WHERE li.id = $1
-      LIMIT 1
-      `,
-      [inviteId],
-    );
-
-    const invite = inviteResult.rows[0];
-
-    if (!invite) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Invite not found" });
-    }
-
-    if (invite.invited_user_id !== req.user!.id) {
-      await client.query("ROLLBACK");
-      return res.status(403).json({ error: "Not your invite" });
-    }
-
-    if (invite.status !== "pending") {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Invite is no longer pending" });
-    }
-
-    await client.query(
       `
       UPDATE lobby_invites
       SET status = 'accepted',
           responded_at = NOW()
       WHERE id = $1
+        AND invited_user_id = $2
+        AND status = 'pending'
+        AND expires_at > NOW()
+      RETURNING id, lobby_id, invited_user_id
       `,
-      [inviteId],
+      [inviteId, req.user!.id],
     );
+
+    if (!acceptedInviteResult.rowCount) {
+      const inviteResult = await client.query<{
+        id: string;
+        invited_user_id: string;
+      }>(
+        `
+        SELECT id, invited_user_id
+        FROM lobby_invites
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [inviteId],
+      );
+
+      const invite = inviteResult.rows[0];
+
+      if (!invite) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Invite not found" });
+      }
+
+      if (invite.invited_user_id !== req.user!.id) {
+        await client.query("ROLLBACK");
+        return res.status(403).json({ error: "Not your invite" });
+      }
+
+      await client.query(
+        `
+        UPDATE lobby_invites
+        SET status = 'expired',
+            responded_at = COALESCE(responded_at, NOW())
+        WHERE id = $1
+          AND status = 'pending'
+          AND expires_at <= NOW()
+        `,
+        [inviteId],
+      );
+
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Invite expired or no longer pending" });
+    }
+
+    const invite = acceptedInviteResult.rows[0];
 
     await client.query(
       `
@@ -146,21 +164,26 @@ router.post("/:inviteId/accept", requireAuth, async (req, res, next) => {
       );
     }
 
-    await client.query(
+    const deletedNotificationResult = await client.query<{ id: string }>(
       `
       DELETE FROM notifications
       WHERE user_id = $1
         AND type = 'lobby_invite'
         AND (data->>'inviteId') = $2
+      RETURNING id
       `,
       [req.user!.id, inviteId],
     );
+
+    const deletedNotificationId = deletedNotificationResult.rows[0]?.id ?? null;
 
     await client.query("COMMIT");
 
     const io = getIo();
 
-    if (previousLobbyId) {
+    if (previousLobbyId && previousLobbyId !== invite.lobby_id) {
+      lobbySessionManager.explicitLeaveLobby(previousLobbyId, req.user!.id);
+
       const previousLobbyState =
         await lobbyService.getLobbyState(previousLobbyId);
       const mergedPreviousLobbyState =
@@ -180,6 +203,12 @@ router.post("/:inviteId/accept", requireAuth, async (req, res, next) => {
       "lobby:state",
       mergedJoinedLobbyState,
     );
+
+    if (deletedNotificationId) {
+      io.to(rooms.user(req.user!.id)).emit("notification:deleted", {
+        id: deletedNotificationId,
+      });
+    }
 
     return res.status(200).json({
       ok: true,
@@ -201,73 +230,98 @@ router.post("/:inviteId/decline", requireAuth, async (req, res, next) => {
 
     await client.query("BEGIN");
 
-    const inviteResult = await client.query<{
+    const declinedInviteResult = await client.query<{
       id: string;
       lobby_id: string;
-      invited_user_id: string;
       invited_by_user_id: string;
-      status: string;
     }>(
-      `
-      SELECT
-        li.id,
-        li.lobby_id,
-        li.invited_user_id,
-        li.invited_by_user_id,
-        li.status
-      FROM lobby_invites li
-      WHERE li.id = $1
-      LIMIT 1
-      `,
-      [inviteId],
-    );
-
-    const invite = inviteResult.rows[0];
-
-    if (!invite) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Invite not found" });
-    }
-
-    if (invite.invited_user_id !== req.user!.id) {
-      await client.query("ROLLBACK");
-      return res.status(403).json({ error: "Not your invite" });
-    }
-
-    if (invite.status !== "pending") {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Invite is no longer pending" });
-    }
-
-    await client.query(
       `
       UPDATE lobby_invites
       SET status = 'declined',
           responded_at = NOW()
       WHERE id = $1
+        AND invited_user_id = $2
+        AND status = 'pending'
+        AND expires_at > NOW()
+      RETURNING id, lobby_id, invited_by_user_id
       `,
-      [inviteId],
+      [inviteId, req.user!.id],
     );
 
-    await client.query(
+    if (!declinedInviteResult.rowCount) {
+      const inviteResult = await client.query<{
+        id: string;
+        invited_user_id: string;
+      }>(
+        `
+        SELECT id, invited_user_id
+        FROM lobby_invites
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [inviteId],
+      );
+
+      const invite = inviteResult.rows[0];
+
+      if (!invite) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Invite not found" });
+      }
+
+      if (invite.invited_user_id !== req.user!.id) {
+        await client.query("ROLLBACK");
+        return res.status(403).json({ error: "Not your invite" });
+      }
+
+      await client.query(
+        `
+        UPDATE lobby_invites
+        SET status = 'expired',
+            responded_at = COALESCE(responded_at, NOW())
+        WHERE id = $1
+          AND status = 'pending'
+          AND expires_at <= NOW()
+        `,
+        [inviteId],
+      );
+
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Invite expired or no longer pending" });
+    }
+
+    const invite = declinedInviteResult.rows[0];
+
+    const deletedNotificationResult = await client.query<{ id: string }>(
       `
       DELETE FROM notifications
       WHERE user_id = $1
         AND type = 'lobby_invite'
         AND (data->>'inviteId') = $2
+      RETURNING id
       `,
       [req.user!.id, inviteId],
     );
 
+    const deletedNotificationId = deletedNotificationResult.rows[0]?.id ?? null;
+
     await client.query("COMMIT");
 
-    getIo()
-      .to(rooms.user(invite.invited_by_user_id))
-      .emit("lobby_invite:declined", {
-        inviteId,
-        lobbyId: invite.lobby_id,
-        steamId: req.user!.steamId,
+    const io = getIo();
+
+    io.to(rooms.user(invite.invited_by_user_id)).emit("lobby_invite:declined", {
+      inviteId,
+      lobbyId: invite.lobby_id,
+      steamId: req.user!.steamId,
+    });
+
+    if (deletedNotificationId) {
+      io.to(rooms.user(req.user!.id)).emit("notification:deleted", {
+        id: deletedNotificationId,
       });
+    }
 
     return res.status(200).json({ ok: true });
   } catch (error) {
@@ -323,7 +377,7 @@ router.post("/", requireAuth, async (req, res, next) => {
         AND left_at IS NULL
         AND kicked_at IS NULL
       LIMIT 1
-  `,
+      `,
       [lobbyId, invitedUser.id],
     );
 
@@ -340,7 +394,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       WHERE user_id = $1
         AND friend_user_id = $2
       LIMIT 1
-  `,
+      `,
       [req.user!.id, invitedUser.id],
     );
 
@@ -350,6 +404,19 @@ router.post("/", requireAuth, async (req, res, next) => {
       });
     }
 
+    await db.query(
+      `
+      UPDATE lobby_invites
+      SET status = 'expired',
+          responded_at = COALESCE(responded_at, NOW())
+      WHERE lobby_id = $1
+        AND invited_user_id = $2
+        AND status = 'pending'
+        AND expires_at <= NOW()
+      `,
+      [lobbyId, invitedUser.id],
+    );
+
     const existingPendingInviteResult = await db.query(
       `
       SELECT 1
@@ -357,8 +424,9 @@ router.post("/", requireAuth, async (req, res, next) => {
       WHERE lobby_id = $1
         AND invited_user_id = $2
         AND status = 'pending'
+        AND expires_at > NOW()
       LIMIT 1
-  `,
+      `,
       [lobbyId, invitedUser.id],
     );
 
@@ -368,21 +436,26 @@ router.post("/", requireAuth, async (req, res, next) => {
       });
     }
 
-    const inviteInsertResult = await db.query<{ id: string }>(
+    const inviteInsertResult = await db.query<{
+      id: string;
+      expires_at: string;
+    }>(
       `
       INSERT INTO lobby_invites (
         lobby_id,
         invited_user_id,
         invited_by_user_id,
-        status
+        status,
+        expires_at
       )
-      VALUES ($1, $2, $3, 'pending')
-      RETURNING id
+      VALUES ($1, $2, $3, 'pending', NOW() + INTERVAL '30 seconds')
+      RETURNING id, expires_at
       `,
       [lobbyId, invitedUser.id, req.user!.id],
     );
 
     const inviteId = inviteInsertResult.rows[0].id;
+    const expiresAt = inviteInsertResult.rows[0].expires_at;
 
     const notificationResult = await db.query<{
       id: string;
@@ -407,6 +480,7 @@ router.post("/", requireAuth, async (req, res, next) => {
           lobbyId,
           fromUserId: req.user!.id,
           fromSteamId: req.user!.steamId,
+          expiresAt,
         }),
       ],
     );
@@ -422,7 +496,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       createdAt: notification.created_at,
     });
 
-    return res.status(200).json({ ok: true, lobbyId, inviteId });
+    return res.status(200).json({ ok: true, lobbyId, inviteId, expiresAt });
   } catch (error) {
     return next(error);
   }

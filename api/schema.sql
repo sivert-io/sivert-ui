@@ -73,8 +73,9 @@ CREATE TABLE IF NOT EXISTS lobby_invites (
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   responded_at TIMESTAMPTZ,
-  expires_at TIMESTAMPTZ,
-  CONSTRAINT lobby_invites_status_check CHECK (status IN ('pending', 'accepted', 'declined', 'revoked'))
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 seconds'),
+  CONSTRAINT lobby_invites_status_check
+    CHECK (status IN ('pending', 'accepted', 'declined', 'revoked', 'expired'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_lobby_invites_invited_user_id ON lobby_invites(invited_user_id);
@@ -169,3 +170,8 @@ CREATE TABLE IF NOT EXISTS friend_requests (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_friend_requests_one_pending_pair
   ON friend_requests(requester_user_id, recipient_user_id)
   WHERE status = 'pending';
+
+UPDATE lobby_invites
+SET expires_at = created_at + INTERVAL '30 seconds'
+WHERE expires_at IS NULL
+  AND status = 'pending';
