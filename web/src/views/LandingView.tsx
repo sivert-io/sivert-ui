@@ -3,7 +3,7 @@ import { Logo } from "../components/Logo";
 
 export function LandingView() {
   return (
-    <div className="flex min-h-[calc(100vh-9rem)] flex-col items-center justify-center gap-12 py-12">
+    <div className="flex min-h-[calc(100vh-9rem)] flex-col items-center justify-center gap-12">
       <div className="flex flex-col items-center gap-4">
         <p className="font-medium">Find your</p>
         <Logo solid />

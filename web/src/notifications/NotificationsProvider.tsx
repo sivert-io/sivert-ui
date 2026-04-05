@@ -10,12 +10,39 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { socket, isConnected } = useSocket();
   const { isSignedIn, isLoading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
   const inviteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const inviteAudioReadyRef = useRef(false);
 
   useEffect(() => {
-    inviteAudioRef.current = new Audio("/sounds/invite-received.mp3");
-    inviteAudioRef.current.preload = "auto";
-    inviteAudioRef.current.volume = 0.5;
+    const audio = new Audio("/sounds/invite-received.mp3");
+    audio.preload = "auto";
+    audio.volume = 0.5;
+
+    const handleCanPlayThrough = () => {
+      inviteAudioReadyRef.current = true;
+    };
+
+    const handleError = (event: Event) => {
+      inviteAudioReadyRef.current = false;
+      console.error("Invite sound failed to load:", event);
+    };
+
+    inviteAudioRef.current = audio;
+    inviteAudioReadyRef.current = false;
+
+    audio.addEventListener("canplaythrough", handleCanPlayThrough);
+    audio.addEventListener("error", handleError);
+
+    audio.load();
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("canplaythrough", handleCanPlayThrough);
+      audio.removeEventListener("error", handleError);
+      inviteAudioRef.current = null;
+      inviteAudioReadyRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -65,9 +92,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
       if (payload.type === "lobby_invite") {
         const audio = inviteAudioRef.current;
-        if (audio) {
+        const isReady = inviteAudioReadyRef.current;
+
+        if (audio && isReady) {
+          audio.pause();
           audio.currentTime = 0;
-          void audio.play().catch(() => {});
+
+          void audio.play().catch((error) => {
+            console.error("Failed to play invite sound:", error);
+          });
+        } else {
+          console.warn("Invite sound not ready yet");
         }
       }
 
