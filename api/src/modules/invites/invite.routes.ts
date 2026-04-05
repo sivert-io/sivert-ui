@@ -1,4 +1,3 @@
-// api/src/modules/invites/invite.routes.ts
 import { Router } from "express";
 import { db } from "../../db.js";
 import { requireAuth } from "../../middleware/require-auth.js";
@@ -262,14 +261,13 @@ router.post("/:inviteId/decline", requireAuth, async (req, res, next) => {
 
     await client.query("COMMIT");
 
-    getIo().to(rooms.user(invite.invited_by_user_id)).emit(
-      "lobby_invite:declined",
-      {
+    getIo()
+      .to(rooms.user(invite.invited_by_user_id))
+      .emit("lobby_invite:declined", {
         inviteId,
         lobbyId: invite.lobby_id,
         steamId: req.user!.steamId,
-      },
-    );
+      });
 
     return res.status(200).json({ ok: true });
   } catch (error) {

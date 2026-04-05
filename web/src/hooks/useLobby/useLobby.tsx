@@ -1,4 +1,3 @@
-// src/hooks/useLobby/useLobby.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useSocket } from "../../socket/useSocket";
 import type {

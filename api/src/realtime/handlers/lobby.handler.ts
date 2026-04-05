@@ -1,4 +1,3 @@
-// api/src/realtime/handlers/lobby.handler.ts
 import type { Server, Socket } from "socket.io";
 import { db } from "../../db.js";
 import { lobbySessionManager } from "../../modules/lobbies/lobby-session-manager.js";

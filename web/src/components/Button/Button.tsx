@@ -43,6 +43,11 @@ const sizeStyles: Record<ButtonSize, string> = {
   sm: "text-xs h-8 px-3",
 };
 
+const squareSizeStyles: Record<ButtonSize, string> = {
+  md: "text-sm size-11",
+  sm: "text-xs size-8",
+};
+
 type NativeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 type Props = ButtonProps & NativeButtonProps;
 
@@ -58,10 +63,10 @@ export function Button({
   ...props
 }: Props) {
   const classes = cn(
-    "font-medium flex items-center justify-center gap-2",
+    "font-medium flex items-center justify-center gap-2 shrink-0",
     baseStyles,
     styles[variant][color],
-    square ? "p-3" : sizeStyles[size],
+    square ? squareSizeStyles[size] : sizeStyles[size],
     className,
   );
 

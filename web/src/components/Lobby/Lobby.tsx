@@ -12,6 +12,7 @@ import { HoverDropdown } from "../Dropdown/HoverDropdown";
 import { API_BASE_URL } from "../../lib/api";
 import { toast } from "sonner";
 import { MdClose } from "react-icons/md";
+import { Tooltip } from "../Tooltip";
 
 function formatElapsed(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -281,29 +282,37 @@ export function Lobby({ user }: LobbyProps) {
         </AnimatePresence>
 
         <motion.div
-          className="flex flex-col justify-end items-center gap-2 relative"
-          initial={{ height: 44 }}
-          animate={{ height: isInQueue ? 170 : 44 }}
+          className="relative flex flex-col justify-end items-center gap-2"
+          initial={{ height: 36 }}
+          animate={{ height: isInQueue ? 170 : 36 }}
         >
-          <Button
-            onClick={handleToggleQueue}
-            variant={isInQueue ? "outline" : "solid"}
-            disabled={isLobbyLoading || !lobbyId}
-          >
-            {isInQueue ? "Stop searching" : "Find match"}
-          </Button>
-
-          {!isInQueue && players.filter(Boolean).length > 1 && (
+          <div className="relative">
             <Button
-              onClick={handleLeaveLobby}
-              square
-              variant="ghost"
+              onClick={handleToggleQueue}
+              variant={isInQueue ? "outline" : "solid"}
               disabled={isLobbyLoading || !lobbyId}
-              className="absolute -right-12"
             >
-              <MdClose />
+              {isInQueue ? "Stop searching" : "Find match"}
             </Button>
-          )}
+
+            {!isInQueue && players.filter(Boolean).length > 1 && (
+              <Tooltip
+                wrapperClassName="absolute left-full top-1/2 ml-2 -translate-y-1/2"
+                content="Leave lobby"
+                placement="bottom-center"
+              >
+                <Button
+                  onClick={handleLeaveLobby}
+                  square
+                  size="sm"
+                  variant="ghost"
+                  disabled={isLobbyLoading || !lobbyId}
+                >
+                  <MdClose />
+                </Button>
+              </Tooltip>
+            )}
+          </div>
         </motion.div>
       </div>
 

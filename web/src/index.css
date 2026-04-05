@@ -11,6 +11,11 @@
   --font-mono: "Lilex", monospace;
 }
 
+html,
+body {
+  background: var(--color-background);
+}
+
 body {
   font-family: var(--font-sans);
   font-optical-sizing: auto;
@@ -23,8 +28,9 @@ button {
 
 @media (hover: hover) and (pointer: fine) {
   html {
+    scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.35) var(--color-background);
   }
 
   ::-webkit-scrollbar {
@@ -38,7 +44,7 @@ button {
   }
 
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--color-background);
   }
 }
 
@@ -48,7 +54,6 @@ button {
   border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
   box-shadow: none !important;
   font-family: var(--font-sans) !important;
-
   border-radius: 8px !important;
   backdrop-filter: blur(8px);
 }

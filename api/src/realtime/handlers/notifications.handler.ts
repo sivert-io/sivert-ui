@@ -1,4 +1,3 @@
-// src/realtime/handlers/notifications.handler.ts
 import type { Server, Socket } from "socket.io";
 import { rooms } from "../rooms.js";
 

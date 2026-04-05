@@ -199,6 +199,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
         }),
       );
 
+      navigate("/");
       toast("Invite accepted");
     } catch (error) {
       console.error(error);
@@ -427,7 +428,6 @@ export function Navbar({ isInQueue }: NavbarProps) {
                     variant="ghost"
                     size="sm"
                     onClick={toggle}
-                    className="px-3"
                     aria-expanded={isOpen}
                     aria-haspopup="menu"
                   >

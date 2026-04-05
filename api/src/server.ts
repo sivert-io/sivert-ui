@@ -1,4 +1,3 @@
-// api/src/server.ts
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { app } from "./app.js";

@@ -1,4 +1,3 @@
-// src/hooks/useNotifications/types.ts
 export type Notification = {
   id: string;
   type: string;

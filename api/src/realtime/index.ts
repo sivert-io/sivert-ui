@@ -1,4 +1,3 @@
-// api/src/realtime/index.ts
 import type { Server } from "socket.io";
 import { attachSocketAuth } from "./auth.js";
 import { registerLobbyHandlers } from "./handlers/lobby.handler.js";

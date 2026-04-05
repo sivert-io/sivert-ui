@@ -1,4 +1,3 @@
-// src/notifications/NotificationsProvider.tsx
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useSocket } from "../socket/useSocket";
@@ -70,21 +69,21 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [socket]);
 
   async function deleteNotification(id: string) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
-    if (!response.ok && response.status !== 404) {
-      throw new Error("Failed to delete notification");
+      if (!response.ok && response.status !== 404) {
+        throw new Error("Failed to delete notification");
+      }
+
+      setNotifications((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error(error);
     }
-
-    setNotifications((prev) => prev.filter((item) => item.id !== id));
-  } catch (error) {
-    console.error(error);
   }
-}
 
   async function markAsRead(id: string) {
     try {
@@ -113,21 +112,21 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }
 
   async function clearNotifications() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notifications`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to clear notifications");
+      if (!response.ok) {
+        throw new Error("Failed to clear notifications");
+      }
+
+      setNotifications([]);
+    } catch (error) {
+      console.error(error);
     }
-
-    setNotifications([]);
-  } catch (error) {
-    console.error(error);
   }
-}
 
   const value = useMemo(
     () => ({

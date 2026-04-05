@@ -1,4 +1,3 @@
-// src/notifications/useNotifications.ts
 import { useContext } from "react";
 import { NotificationsContext } from "./NotificationsContext";
 

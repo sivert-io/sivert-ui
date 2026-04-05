@@ -1,4 +1,3 @@
-// src/modules/lobbies/lobby-session-manager.ts
 type LobbyMemberSnapshot = {
   userId: string;
   steamId: string;

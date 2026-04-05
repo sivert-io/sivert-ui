@@ -1,4 +1,3 @@
-// api/src/modules/notifications/notification.routes.ts
 import { Router } from "express";
 import { db } from "../../db.js";
 import { requireAuth } from "../../middleware/require-auth.js";

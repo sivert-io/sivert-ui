@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router";
-import { MdSettings } from "react-icons/md";
+import { MdPersonAdd, MdSettings } from "react-icons/md";
 import { useAuth } from "../auth/useAuth";
 import { useNotifications } from "../notifications/useNotifications";
 import { Card } from "../components/Card";
@@ -50,7 +50,7 @@ export function ProfileView() {
   const { notifications } = useNotifications();
   const { steamId } = useParams();
   const { socket } = useSocket();
-  
+
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -83,22 +83,22 @@ export function ProfileView() {
     });
   }, [notifications, profile?.steamId]);
 
-useEffect(() => {
-  function onFriendRemoved(payload: { steamId?: string }) {
-    if (!payload.steamId || !profile?.steamId) return;
+  useEffect(() => {
+    function onFriendRemoved(payload: { steamId?: string }) {
+      if (!payload.steamId || !profile?.steamId) return;
 
-    if (payload.steamId === profile.steamId) {
-      setFriendRequestState("idle");
-      toast("Friend removed");
+      if (payload.steamId === profile.steamId) {
+        setFriendRequestState("idle");
+        toast("Friend removed");
+      }
     }
-  }
 
-  socket.on("friend:removed", onFriendRemoved);
+    socket.on("friend:removed", onFriendRemoved);
 
-  return () => {
-    socket.off("friend:removed", onFriendRemoved);
-  };
-}, [socket, profile?.steamId]);
+    return () => {
+      socket.off("friend:removed", onFriendRemoved);
+    };
+  }, [socket, profile?.steamId]);
 
   useEffect(() => {
     if (!steamId) return;
@@ -408,7 +408,7 @@ useEffect(() => {
         </div>
 
         {isSignedIn && !isOwnProfile ? (
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-12 right-6">
             {friendRequestState === "friends" ? (
               <HoverDropdown
                 placement="bottom-right"
@@ -451,6 +451,7 @@ useEffect(() => {
                   friendRequestState === "pending_incoming"
                 }
               >
+                <MdPersonAdd />
                 {isSendingFriendRequest
                   ? "Sending..."
                   : friendRequestState === "pending_outgoing"

@@ -1,4 +1,3 @@
-// src/hooks/useLobby/types.ts
 import type { AuthUser, PublicProfile } from "../../auth/types";
 
 export interface UseLobbyProps {

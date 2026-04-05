@@ -1,4 +1,3 @@
-// src/socket/events.ts
 export const SOCKET_EVENTS = {
   CONNECTED: "connect",
   DISCONNECTED: "disconnect",

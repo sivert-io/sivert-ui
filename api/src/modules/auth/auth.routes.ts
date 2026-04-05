@@ -57,7 +57,6 @@ router.get("/me", (req, res) => {
   });
 });
 
-// GET /notifications
 router.get("/", requireAuth, async (req, res, next) => {
   try {
     const result = await db.query(

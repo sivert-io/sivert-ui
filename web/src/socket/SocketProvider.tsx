@@ -1,4 +1,3 @@
-// src/socket/SocketProvider.tsx
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "../auth/useAuth";
 import { socket } from "./client";

@@ -1,4 +1,3 @@
-// src/realtime/auth.ts
 import type { Server } from "socket.io";
 import cookie from "cookie";
 import { config } from "../config.js";

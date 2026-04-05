@@ -1,4 +1,3 @@
-// src/realtime/rooms.ts
 export const rooms = {
   user: (userId: string) => `user:${userId}`,
   lobby: (lobbyId: string) => `lobby:${lobbyId}`,

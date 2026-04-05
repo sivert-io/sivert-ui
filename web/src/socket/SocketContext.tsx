@@ -1,4 +1,3 @@
-// src/socket/SocketContext.tsx
 import { createContext } from "react";
 import type { Socket } from "socket.io-client";
 
