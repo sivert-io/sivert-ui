@@ -80,7 +80,7 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
   return (
     <Modal open={open} setOpen={setOpen}>
       <div className="space-y-4 text-primary">
-        <h2 className="text-xl font-semibold">Invite players</h2>
+        <h2 className="text-xl font-semibold">Invite your friends</h2>
 
         {isLoading && (
           <p className="text-sm text-primary/70">Loading players...</p>
@@ -96,15 +96,13 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
               const isInvited = invitedPlayerIds.includes(player.steamId);
 
               return (
-                <div className={isInvited ? "opacity-25" : ""}>
-                  <PlayerCard
-                    key={player.steamId}
-                    playerData={player}
-                    onClick={() => handleInvite(player)}
-                    disabled={isInvited}
-                    statusLabel={isInvited ? "Invited" : undefined}
-                  />
-                </div>
+                <PlayerCard
+                  key={player.steamId}
+                  playerData={player}
+                  onClick={() => handleInvite(player)}
+                  disabled={isInvited}
+                  statusLabel={isInvited ? "invited" : undefined}
+                />
               );
             })}
           </div>

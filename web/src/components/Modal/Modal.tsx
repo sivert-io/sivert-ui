@@ -1,3 +1,4 @@
+import cn from "classnames";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
@@ -98,10 +99,10 @@ export function Modal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className={[
+          className={cn(
             "fixed inset-0 z-999 grid place-items-center p-4",
             className,
-          ].join(" ")}
+          )}
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
           exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
@@ -119,10 +120,10 @@ export function Modal({
             aria-modal="true"
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
-            className={[
+            className={cn(
               "relative w-full max-w-lg rounded-2xl border border-primary/30 bg-background p-6 shadow-2xl outline-none",
               panelClassName,
-            ].join(" ")}
+            )}
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}

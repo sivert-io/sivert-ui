@@ -1,3 +1,4 @@
+import cn from "classnames";
 import type React from "react";
 import { Link } from "../Link";
 import type { ButtonColor, ButtonProps, ButtonVariant } from "./types";
@@ -45,9 +46,13 @@ export function Button({
   type = "button",
   ...props
 }: Props) {
-  const classes = `font-medium flex items-center justify-center gap-2 ${baseStyles} ${styles[variant][color]} ${
-    square ? "p-3" : "px-4 py-2"
-  } ${className}`;
+  const classes = cn(
+    "font-medium flex items-center justify-center gap-2",
+    baseStyles,
+    styles[variant][color],
+    square ? "p-3" : "px-4 py-2",
+    className,
+  );
 
   return href ? (
     <Link className={classes} to={href}>

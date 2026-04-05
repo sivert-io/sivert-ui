@@ -1,3 +1,4 @@
+import cn from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -30,10 +31,10 @@ function DropdownActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={[
+      className={cn(
         "flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm transition hover:bg-white/10",
         danger ? "text-red-300" : "text-primary",
-      ].join(" ")}
+      )}
     >
       {children}
     </button>
@@ -156,7 +157,7 @@ export function Lobby({ user }: LobbyProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="flex flex-col items-center gap-4 absolute"
+              className="absolute flex flex-col items-center gap-4"
             >
               <Spinner size={64} easing="snappy" duration={2} mode="fill" />
 

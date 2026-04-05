@@ -1,3 +1,4 @@
+import cn from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { MdAdd } from "react-icons/md";
 import { Button } from "../Button";
@@ -68,7 +69,12 @@ export function PlayerCard({
               type="button"
               onClick={onClick}
               disabled={disabled}
-              className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-lg border border-primary/25 bg-primary/5 p-4 text-left transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className={cn(
+                "relative flex h-full w-full flex-col items-center justify-center gap-3 rounded-lg border bg-primary/5 p-4 text-left transition hover:bg-primary/10 disabled:cursor-not-allowed",
+                statusLabel === "invited"
+                  ? "border-secondary"
+                  : "border-primary/25",
+              )}
               initial={{ opacity: 0, scale: scale * 0.9 }}
               animate={{ opacity: 1, scale }}
               exit={{ opacity: 0, scale: scale * 0.9 }}
@@ -88,7 +94,7 @@ export function PlayerCard({
               <Rank rank={playerData.rank} />
 
               {statusLabel ? (
-                <p className="text-xs font-medium uppercase tracking-wide text-primary/70">
+                <p className="absolute top-1 text-xs font-bold uppercase tracking-wide text-secondary">
                   {statusLabel}
                 </p>
               ) : null}
