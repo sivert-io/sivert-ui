@@ -281,9 +281,9 @@ export function Lobby({ user }: LobbyProps) {
         </AnimatePresence>
 
         <motion.div
-          className="flex items-center gap-2 relative"
+          className="flex flex-col justify-end items-center gap-2 relative"
           initial={{ height: 44 }}
-          animate={{ height: isInQueue ? 210 : 86 }}
+          animate={{ height: isInQueue ? 170 : 44 }}
         >
           <Button
             onClick={handleToggleQueue}
