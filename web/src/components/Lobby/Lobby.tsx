@@ -46,17 +46,16 @@ export function Lobby({ user }: LobbyProps) {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [queueStartTime, setQueueStartTime] = useState<number | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [elapsedMs, setElapsedMs] = useState(0);
 
   const isInQueue = queueStartTime !== null;
-  const elapsedLabel =
-    queueStartTime !== null ? formatElapsed(now - queueStartTime) : null;
+  const elapsedLabel = isInQueue ? formatElapsed(elapsedMs) : null;
 
   useEffect(() => {
     if (queueStartTime === null) return;
 
     const interval = window.setInterval(() => {
-      setNow(Date.now());
+      setElapsedMs(Date.now() - queueStartTime);
     }, 1000);
 
     return () => window.clearInterval(interval);
@@ -66,11 +65,12 @@ export function Lobby({ user }: LobbyProps) {
     if (queueStartTime === null) {
       const startedAt = Date.now();
       setQueueStartTime(startedAt);
-      setNow(startedAt);
+      setElapsedMs(0);
       return;
     }
 
     setQueueStartTime(null);
+    setElapsedMs(0);
   }
 
   function openInviteModal() {
@@ -147,20 +147,16 @@ export function Lobby({ user }: LobbyProps) {
         {renderPlayerSlot(players[4], 0.7)}
       </div>
 
-      <motion.div
-        layout
-        className="relative z-10 flex flex-col items-center gap-4"
-      >
-        <AnimatePresence initial={false} mode="popLayout">
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <AnimatePresence mode="sync" initial={false}>
           {isInQueue && (
             <motion.div
               key="queue-status"
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="flex flex-col items-center gap-4"
+              className="flex flex-col items-center gap-4 absolute"
             >
               <Spinner size={64} easing="snappy" duration={2} mode="fill" />
 
@@ -174,7 +170,11 @@ export function Lobby({ user }: LobbyProps) {
           )}
         </AnimatePresence>
 
-        <motion.div layout>
+        <motion.div
+          className="flex flex-col items-center justify-end"
+          initial={{ height: 44 }}
+          animate={{ height: isInQueue ? 170 : 40 }}
+        >
           <Button
             onClick={handleToggleQueue}
             variant={isInQueue ? "outline" : "solid"}
@@ -182,7 +182,7 @@ export function Lobby({ user }: LobbyProps) {
             {isInQueue ? "Stop searching" : "Find match"}
           </Button>
         </motion.div>
-      </motion.div>
+      </div>
 
       <InviteModal open={showInviteModal} setOpen={setShowInviteModal} />
     </div>
