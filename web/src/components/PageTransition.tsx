@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 export function PageTransition({ children }: PropsWithChildren) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+      initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
       animate={{
         opacity: 1,
         y: 0,
@@ -16,7 +16,7 @@ export function PageTransition({ children }: PropsWithChildren) {
       }}
       exit={{
         opacity: 0,
-        y: 12,
+        y: -12,
         filter: "blur(6px)",
         transition: {
           duration: 0.06,
