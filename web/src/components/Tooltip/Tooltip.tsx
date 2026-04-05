@@ -89,7 +89,7 @@ export function Tooltip({
                 exit={initial}
                 transition={{ duration: 0.1, ease: "easeOut" }}
                 className={cn(
-                  "pointer-events-none z-400 w-max max-w-xs rounded border border-primary/20 bg-background/90 px-3 py-2 text-sm shadow-xl backdrop-blur-xs",
+                  "pointer-events-none z-400 w-max max-w-xs rounded-lg border border-primary/20 bg-background px-3 py-2 text-sm",
                   contentClassName,
                 )}
               >

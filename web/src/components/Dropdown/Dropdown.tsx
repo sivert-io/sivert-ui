@@ -46,7 +46,7 @@ export function Dropdown({
             exit={initial}
             transition={{ duration: 0.16, ease: "easeOut" }}
             className={cn(
-              "z-400 rounded-2xl border border-primary/20 bg-background/90 p-2 shadow-xl backdrop-blur-xs",
+              "z-400 rounded-2xl border border-primary/20 bg-background p-2",
               className,
             )}
           >

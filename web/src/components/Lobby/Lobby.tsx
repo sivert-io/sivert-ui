@@ -1,17 +1,15 @@
-import cn from "classnames";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { MdClose, MdOutlineDoorBack } from "react-icons/md";
+import { toast } from "sonner";
 import { useLobby } from "../../hooks/useLobby";
 import { PlayerCard } from "../PlayerCard";
 import type { LobbyProps } from "./types";
 import { InviteModal } from "./InviteModal";
 import { Spinner } from "../Spinner";
 import { Button } from "../Button";
-import { HoverDropdown } from "../Dropdown/HoverDropdown";
 import { API_BASE_URL } from "../../lib/api";
-import { toast } from "sonner";
-import { MdClose } from "react-icons/md";
 import { Tooltip } from "../Tooltip";
 
 function formatElapsed(ms: number) {
@@ -37,34 +35,47 @@ function formatOfflineDuration(disconnectedAt?: number | null) {
   return `Offline for ${seconds}s`;
 }
 
-function DropdownActionButton({
-  children,
-  onClick,
-  danger = false,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm transition hover:bg-white/10 text-nowrap",
-        danger ? "text-red-300" : "text-primary",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 type CurrentLobbyResponse = {
   lobby: {
     lobbyId: string;
   };
 };
+
+function KickablePlayerCard({
+  children,
+  onKick,
+  playerName,
+}: {
+  children: React.ReactNode;
+  onKick: () => void;
+  playerName?: string;
+}) {
+  return (
+    <div className="relative">
+      <Tooltip
+        wrapperClassName="absolute -right-0 -top-0 z-10"
+        content={`Kick ${playerName ?? "player"}`}
+        placement="top-center"
+      >
+        <Button
+          type="button"
+          square
+          size="sm"
+          variant="ghost"
+          aria-label={`Kick ${playerName ?? "player"} from lobby`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onKick();
+          }}
+        >
+          <MdClose />
+        </Button>
+      </Tooltip>
+
+      {children}
+    </div>
+  );
+}
 
 export function Lobby({ user }: LobbyProps) {
   const navigate = useNavigate();
@@ -303,21 +314,12 @@ export function Lobby({ user }: LobbyProps) {
     }
 
     return (
-      <HoverDropdown
-        placement="bottom-center"
-        hoverable
-        closeDelay={120}
-        trigger={() => playerCard}
+      <KickablePlayerCard
+        playerName={player.personaName ?? undefined}
+        onKick={() => handleKickFromLobby(player.steamId)}
       >
-        <div className="flex flex-col gap-1">
-          <DropdownActionButton
-            danger
-            onClick={() => handleKickFromLobby(player.steamId)}
-          >
-            Kick from lobby
-          </DropdownActionButton>
-        </div>
-      </HoverDropdown>
+        {playerCard}
+      </KickablePlayerCard>
     );
   }
 
@@ -331,7 +333,7 @@ export function Lobby({ user }: LobbyProps) {
         {renderPlayerSlot(players[4], 0.7)}
       </div>
 
-      <div className="relative z-10 flex flex-col items-center gap-4">
+      <div className="relative z-10 flex w-full flex-col items-center gap-4">
         <AnimatePresence mode="sync" initial={false}>
           {isInQueue && (
             <motion.div
@@ -340,12 +342,12 @@ export function Lobby({ user }: LobbyProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="absolute flex flex-col items-center gap-4"
+              className="absolute flex flex-col items-center gap-1"
             >
               <Spinner size={64} easing="snappy" duration={2} mode="fill" />
 
               <div className="flex flex-col items-center gap-1">
-                <p className="text-xs font-bold">Finding players</p>
+                <p className="text-xs font-bold">You are in queue</p>
                 <p className="text-sm tabular-nums text-muted-foreground">
                   {elapsedLabel}
                 </p>
@@ -384,7 +386,7 @@ export function Lobby({ user }: LobbyProps) {
             variant="ghost"
             disabled={disableQueueActions}
           >
-            <MdClose />
+            <MdOutlineDoorBack />
           </Button>
         </Tooltip>
       )}
