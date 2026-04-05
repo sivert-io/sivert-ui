@@ -63,21 +63,6 @@ function DropdownActionButton({
 type CurrentLobbyResponse = {
   lobby: {
     lobbyId: string;
-    members: Array<{
-      userId: string;
-      steamId: string;
-      personaName: string | null;
-      avatarSmall: string | null;
-      avatarMedium: string | null;
-      avatarLarge: string | null;
-      rank: number | null;
-      role: string;
-      ready: boolean;
-      connected: boolean;
-      connectedSockets: number;
-      connectedAt?: number | null;
-      disconnectedAt?: number | null;
-    }>;
   };
 };
 
@@ -85,11 +70,10 @@ export function Lobby({ user }: LobbyProps) {
   const navigate = useNavigate();
 
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [queueStartTime, setQueueStartTime] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
   const [lobbyId, setLobbyId] = useState<string | null>(null);
   const [isLobbyLoading, setIsLobbyLoading] = useState(true);
   const [, setPresenceNow] = useState(Date.now());
+  const [queueNow, setQueueNow] = useState(Date.now());
 
   useEffect(() => {
     function onLobbyChanged(event: Event) {
@@ -99,8 +83,6 @@ export function Lobby({ user }: LobbyProps) {
       if (!nextLobbyId) return;
 
       setLobbyId(nextLobbyId);
-      setQueueStartTime(null);
-      setElapsedMs(0);
       setShowInviteModal(false);
     }
 
@@ -150,23 +132,26 @@ export function Lobby({ user }: LobbyProps) {
     };
   }, []);
 
-  const { players } = useLobby({
+  const { players, queueState, startQueue, stopQueue } = useLobby({
     user,
     lobbyId: lobbyId ?? "",
   });
 
-  const isInQueue = queueStartTime !== null;
-  const elapsedLabel = isInQueue ? formatElapsed(elapsedMs) : null;
+  const isInQueue = !!queueState?.isSearching;
+  const elapsedLabel =
+    isInQueue && queueState?.startedAt
+      ? formatElapsed(queueNow - new Date(queueState.startedAt).getTime())
+      : null;
 
   useEffect(() => {
-    if (queueStartTime === null) return;
+    if (!isInQueue || !queueState?.startedAt) return;
 
     const interval = window.setInterval(() => {
-      setElapsedMs(Date.now() - queueStartTime);
+      setQueueNow(Date.now());
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [queueStartTime]);
+  }, [isInQueue, queueState?.startedAt]);
 
   const hasOfflinePlayers = useMemo(
     () => players.some((player) => player && player.connected === false),
@@ -184,15 +169,14 @@ export function Lobby({ user }: LobbyProps) {
   }, [hasOfflinePlayers]);
 
   function handleToggleQueue() {
-    if (queueStartTime === null) {
-      const startedAt = Date.now();
-      setQueueStartTime(startedAt);
-      setElapsedMs(0);
+    if (!lobbyId) return;
+
+    if (isInQueue) {
+      stopQueue();
       return;
     }
 
-    setQueueStartTime(null);
-    setElapsedMs(0);
+    startQueue();
   }
 
   function openInviteModal() {
@@ -222,19 +206,12 @@ export function Lobby({ user }: LobbyProps) {
       }
 
       setLobbyId(data.lobby.lobbyId);
-      setQueueStartTime(null);
-      setElapsedMs(0);
       setShowInviteModal(false);
       toast("You left the lobby");
     } catch (error) {
       console.error(error);
       toast(error instanceof Error ? error.message : "Failed to leave lobby");
     }
-  }
-
-  function getStatusLabel(player: (typeof players)[number] | null | undefined) {
-    if (!player) return undefined;
-    return undefined;
   }
 
   function getPresenceTooltip(
@@ -268,7 +245,7 @@ export function Lobby({ user }: LobbyProps) {
         playerData={player}
         onClick={() => handleViewProfile(player.steamId)}
         scale={scale}
-        statusLabel={getStatusLabel(player)}
+        statusLabel={undefined}
         title={getPresenceTooltip(player)}
       />
     );

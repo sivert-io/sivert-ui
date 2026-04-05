@@ -19,6 +19,12 @@ export type LobbyState = {
   members: LobbyMember[];
 } | null;
 
+export type LobbyQueueState = {
+  lobbyId: string;
+  isSearching: boolean;
+  startedAt: string | null;
+} | null;
+
 export type LobbyPlayerSlot = {
   steamId: string;
   personaName: string | null;

@@ -12,6 +12,7 @@ import { PrivacyPolicyView } from "./views/PrivacyPolicyView";
 import { PageTransition } from "./components/PageTransition";
 import { Toaster } from "sonner";
 import { useNotifications } from "./notifications/useNotifications";
+import { CreditsView } from "./views/CreditsView";
 
 function RealtimeEffects() {
   useNotifications();
@@ -140,6 +141,14 @@ export function App() {
             element={
               <PageTransition>
                 <AboutView />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/credits"
+            element={
+              <PageTransition>
+                <CreditsView />
               </PageTransition>
             }
           />

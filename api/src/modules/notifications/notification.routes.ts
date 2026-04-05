@@ -6,6 +6,27 @@ const router = Router();
 
 router.get("/", requireAuth, async (req, res, next) => {
   try {
+    await db.query(
+      `
+      WITH expired_invites AS (
+        UPDATE lobby_invites li
+        SET status = 'expired',
+            responded_at = COALESCE(li.responded_at, NOW())
+        WHERE li.invited_user_id = $1
+          AND li.status = 'pending'
+          AND li.expires_at IS NOT NULL
+          AND li.expires_at <= NOW()
+        RETURNING li.id::text AS invite_id
+      )
+      DELETE FROM notifications n
+      USING expired_invites ei
+      WHERE n.user_id = $1
+        AND n.type = 'lobby_invite'
+        AND n.data->>'inviteId' = ei.invite_id
+      `,
+      [req.user!.id],
+    );
+
     const result = await db.query(
       `
       SELECT id, type, title, body, data, read_at, created_at

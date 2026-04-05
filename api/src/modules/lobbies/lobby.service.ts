@@ -17,6 +17,12 @@ type LobbyMemberRow = {
   ready: boolean;
 };
 
+type ExpiredInviteCleanupRow = {
+  invite_id: string;
+  invited_user_id: string;
+  notification_id: string | null;
+};
+
 export class LobbyService {
   async getActiveLobbyIdForUser(userId: string) {
     const result = await db.query<ActiveLobbyRow>(
@@ -122,28 +128,47 @@ export class LobbyService {
     };
   }
 
-  async expireStaleInvites(lobbyId: string, invitedUserId?: string) {
+  async expireStaleInvitesAndDeleteNotifications(
+    lobbyId: string,
+    invitedUserId?: string,
+  ) {
     const params: string[] = [lobbyId];
-    const invitedUserClause = invitedUserId ? `AND invited_user_id = $2` : "";
+    const invitedUserClause = invitedUserId
+      ? `AND li.invited_user_id = $2`
+      : "";
 
     if (invitedUserId) {
       params.push(invitedUserId);
     }
 
-    const result = await db.query<{
-      id: string;
-      invited_user_id: string;
-    }>(
+    const result = await db.query<ExpiredInviteCleanupRow>(
       `
-      UPDATE lobby_invites
-      SET status = 'expired',
-          responded_at = COALESCE(responded_at, NOW())
-      WHERE lobby_id = $1
-        ${invitedUserClause}
-        AND status = 'pending'
-        AND expires_at IS NOT NULL
-        AND expires_at <= NOW()
-      RETURNING id, invited_user_id
+      WITH expired_invites AS (
+        UPDATE lobby_invites li
+        SET status = 'expired',
+            responded_at = COALESCE(li.responded_at, NOW())
+        WHERE li.lobby_id = $1
+          ${invitedUserClause}
+          AND li.status = 'pending'
+          AND li.expires_at IS NOT NULL
+          AND li.expires_at <= NOW()
+        RETURNING li.id::text AS invite_id, li.invited_user_id
+      ),
+      deleted_notifications AS (
+        DELETE FROM notifications n
+        USING expired_invites ei
+        WHERE n.user_id = ei.invited_user_id
+          AND n.type = 'lobby_invite'
+          AND n.data->>'inviteId' = ei.invite_id
+        RETURNING n.id::text AS notification_id, n.user_id
+      )
+      SELECT
+        ei.invite_id,
+        ei.invited_user_id::text,
+        dn.notification_id
+      FROM expired_invites ei
+      LEFT JOIN deleted_notifications dn
+        ON dn.user_id = ei.invited_user_id
       `,
       params,
     );
@@ -320,7 +345,7 @@ export class LobbyService {
   }
 
   async getInviteCandidates(userId: string, lobbyId: string) {
-    await this.expireStaleInvites(lobbyId);
+    await this.expireStaleInvitesAndDeleteNotifications(lobbyId);
 
     const result = await db.query(
       `
@@ -369,7 +394,7 @@ export class LobbyService {
   }
 
   async getFriendsForLobby(userId: string, lobbyId: string) {
-    await this.expireStaleInvites(lobbyId);
+    await this.expireStaleInvitesAndDeleteNotifications(lobbyId);
 
     const result = await db.query<{
       user_id: string;

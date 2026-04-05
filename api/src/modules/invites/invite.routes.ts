@@ -111,7 +111,28 @@ router.post("/:inviteId/accept", requireAuth, async (req, res, next) => {
         [inviteId],
       );
 
-      await client.query("ROLLBACK");
+      const deletedNotificationResult = await client.query<{ id: string }>(
+        `
+        DELETE FROM notifications
+        WHERE user_id = $1
+          AND type = 'lobby_invite'
+          AND (data->>'inviteId') = $2
+        RETURNING id
+        `,
+        [req.user!.id, inviteId],
+      );
+
+      const deletedNotificationId =
+        deletedNotificationResult.rows[0]?.id ?? null;
+
+      await client.query("COMMIT");
+
+      if (deletedNotificationId) {
+        getIo().to(rooms.user(req.user!.id)).emit("notification:deleted", {
+          id: deletedNotificationId,
+        });
+      }
+
       return res
         .status(400)
         .json({ error: "Invite expired or no longer pending" });
@@ -286,7 +307,28 @@ router.post("/:inviteId/decline", requireAuth, async (req, res, next) => {
         [inviteId],
       );
 
-      await client.query("ROLLBACK");
+      const deletedNotificationResult = await client.query<{ id: string }>(
+        `
+        DELETE FROM notifications
+        WHERE user_id = $1
+          AND type = 'lobby_invite'
+          AND (data->>'inviteId') = $2
+        RETURNING id
+        `,
+        [req.user!.id, inviteId],
+      );
+
+      const deletedNotificationId =
+        deletedNotificationResult.rows[0]?.id ?? null;
+
+      await client.query("COMMIT");
+
+      if (deletedNotificationId) {
+        getIo().to(rooms.user(req.user!.id)).emit("notification:deleted", {
+          id: deletedNotificationId,
+        });
+      }
+
       return res
         .status(400)
         .json({ error: "Invite expired or no longer pending" });
@@ -404,18 +446,20 @@ router.post("/", requireAuth, async (req, res, next) => {
       });
     }
 
-    await db.query(
-      `
-      UPDATE lobby_invites
-      SET status = 'expired',
-          responded_at = COALESCE(responded_at, NOW())
-      WHERE lobby_id = $1
-        AND invited_user_id = $2
-        AND status = 'pending'
-        AND expires_at <= NOW()
-      `,
-      [lobbyId, invitedUser.id],
-    );
+    const expiredRows =
+      await lobbyService.expireStaleInvitesAndDeleteNotifications(
+        lobbyId,
+        invitedUser.id,
+      );
+
+    const io = getIo();
+    for (const row of expiredRows) {
+      if (row.notification_id) {
+        io.to(rooms.user(row.invited_user_id)).emit("notification:deleted", {
+          id: row.notification_id,
+        });
+      }
+    }
 
     const existingPendingInviteResult = await db.query(
       `

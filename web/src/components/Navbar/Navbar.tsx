@@ -1,4 +1,5 @@
 import { MdBadge, MdSettings, MdLogout, MdNotifications } from "react-icons/md";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../Button";
 import type { NavbarProps } from "./types";
@@ -37,27 +38,87 @@ function DropdownLink({
   );
 }
 
+function getNotificationSenderSteamId(notification: { data?: unknown }) {
+  if (!notification.data || typeof notification.data !== "object") {
+    return null;
+  }
+
+  if ("fromSteamId" in notification.data) {
+    return String(
+      (notification.data as { fromSteamId?: string }).fromSteamId ?? "",
+    );
+  }
+
+  return null;
+}
+
+function getInviteId(notification: { data?: unknown }) {
+  if (!notification.data || typeof notification.data !== "object") {
+    return "";
+  }
+
+  if ("inviteId" in notification.data) {
+    return String((notification.data as { inviteId?: string }).inviteId ?? "");
+  }
+
+  return "";
+}
+
+function getLobbyId(notification: { data?: unknown }) {
+  if (!notification.data || typeof notification.data !== "object") {
+    return "";
+  }
+
+  if ("lobbyId" in notification.data) {
+    return String((notification.data as { lobbyId?: string }).lobbyId ?? "");
+  }
+
+  return "";
+}
+
+function isExpiredLobbyInvite(notification: { type: string; data?: unknown }) {
+  if (notification.type !== "lobby_invite") {
+    return false;
+  }
+
+  if (!notification.data || typeof notification.data !== "object") {
+    return false;
+  }
+
+  if (!("expiresAt" in notification.data)) {
+    return false;
+  }
+
+  const expiresAt = (notification.data as { expiresAt?: string }).expiresAt;
+  if (!expiresAt) {
+    return false;
+  }
+
+  const expiresAtMs = new Date(expiresAt).getTime();
+  if (Number.isNaN(expiresAtMs)) {
+    return false;
+  }
+
+  return expiresAtMs <= Date.now();
+}
+
 export function Navbar({ isInQueue }: NavbarProps) {
   const navigate = useNavigate();
   const { user, isSignedIn, isLoading, signIn, signOut } = useAuth();
   const { notifications, markAsRead, clearNotifications, deleteNotification } =
     useNotifications();
 
-  const unreadCount = notifications.filter((item) => !item.readAt).length;
+  const visibleNotifications = useMemo(
+    () =>
+      notifications.filter(
+        (notification) => !isExpiredLobbyInvite(notification),
+      ),
+    [notifications],
+  );
 
-  function getNotificationSenderSteamId(notification: { data?: unknown }) {
-    if (!notification.data || typeof notification.data !== "object") {
-      return null;
-    }
-
-    if ("fromSteamId" in notification.data) {
-      return String(
-        (notification.data as { fromSteamId?: string }).fromSteamId ?? "",
-      );
-    }
-
-    return null;
-  }
+  const unreadCount = visibleNotifications.filter(
+    (item) => !item.readAt,
+  ).length;
 
   async function handleAcceptFriendRequest(notification: {
     id?: string;
@@ -154,20 +215,18 @@ export function Navbar({ isInQueue }: NavbarProps) {
   async function handleAcceptInvite(notification: {
     id?: string;
     data?: unknown;
+    type: string;
   }) {
-    const lobbyId =
-      typeof notification.data === "object" &&
-      notification.data !== null &&
-      "lobbyId" in notification.data
-        ? String((notification.data as { lobbyId?: string }).lobbyId ?? "")
-        : "";
+    if (isExpiredLobbyInvite(notification)) {
+      if (notification.id) {
+        await deleteNotification(notification.id);
+      }
+      toast("Invite expired");
+      return;
+    }
 
-    const inviteId =
-      typeof notification.data === "object" &&
-      notification.data !== null &&
-      "inviteId" in notification.data
-        ? String((notification.data as { inviteId?: string }).inviteId ?? "")
-        : "";
+    const lobbyId = getLobbyId(notification);
+    const inviteId = getInviteId(notification);
 
     if (!inviteId) {
       toast("Invite id missing");
@@ -215,13 +274,17 @@ export function Navbar({ isInQueue }: NavbarProps) {
   async function handleDeclineInvite(notification: {
     id?: string;
     data?: unknown;
+    type: string;
   }) {
-    const inviteId =
-      typeof notification.data === "object" &&
-      notification.data !== null &&
-      "inviteId" in notification.data
-        ? String((notification.data as { inviteId?: string }).inviteId ?? "")
-        : "";
+    if (isExpiredLobbyInvite(notification)) {
+      if (notification.id) {
+        await deleteNotification(notification.id);
+      }
+      toast("Invite expired");
+      return;
+    }
+
+    const inviteId = getInviteId(notification);
 
     if (!inviteId) {
       toast("Invite id missing");
@@ -305,7 +368,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                       Notifications
                     </span>
 
-                    {notifications.length > 0 ? (
+                    {visibleNotifications.length > 0 ? (
                       <button
                         type="button"
                         onClick={clearNotifications}
@@ -318,13 +381,13 @@ export function Navbar({ isInQueue }: NavbarProps) {
 
                   <Divider className="border-primary/20" />
 
-                  {notifications.length === 0 ? (
+                  {visibleNotifications.length === 0 ? (
                     <div className="px-3 py-3 text-sm text-primary/70">
                       No notifications yet
                     </div>
                   ) : (
                     <div className="flex max-h-80 flex-col overflow-y-auto">
-                      {notifications.map((notification, index) => {
+                      {visibleNotifications.map((notification, index) => {
                         const isLobbyInvite =
                           notification.type === "lobby_invite";
                         const isFriendRequest =

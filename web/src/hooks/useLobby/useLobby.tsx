@@ -5,6 +5,7 @@ import type {
   LobbyPlayerSlot,
   LobbyState,
   LobbyMember,
+  LobbyQueueState,
 } from "./types";
 
 function toPlayer(member: LobbyMember): Exclude<LobbyPlayerSlot, null> {
@@ -27,30 +28,49 @@ function toPlayer(member: LobbyMember): Exclude<LobbyPlayerSlot, null> {
 export function useLobby({ user, lobbyId }: UseLobbyProps) {
   const { socket, isConnected } = useSocket();
   const [lobbyState, setLobbyState] = useState<LobbyState>(null);
+  const [queueState, setQueueState] = useState<LobbyQueueState>(null);
 
   useEffect(() => {
     if (!isConnected || !lobbyId) return;
 
     function onLobbyState(state: LobbyState) {
-      if (state?.lobbyId === lobbyId) {
+      if (state?.lobbyId === lobbyId || state === null) {
         setLobbyState(state);
       }
     }
 
+    function onQueueState(state: LobbyQueueState) {
+      if (state?.lobbyId === lobbyId) {
+        setQueueState(state);
+      }
+    }
+
     socket.on("lobby:state", onLobbyState);
+    socket.on("lobby:queue_state", onQueueState);
 
     socket.emit(
       "lobby:join",
       { lobbyId },
-      (response: { ok: boolean; state?: LobbyState; error?: string }) => {
-        if (response.ok && response.state) {
-          setLobbyState(response.state);
+      (response: {
+        ok: boolean;
+        state?: LobbyState;
+        queueState?: LobbyQueueState;
+        error?: string;
+      }) => {
+        if (response.ok) {
+          if (response.state) {
+            setLobbyState(response.state);
+          }
+          if (response.queueState) {
+            setQueueState(response.queueState);
+          }
         }
       },
     );
 
     return () => {
       socket.off("lobby:state", onLobbyState);
+      socket.off("lobby:queue_state", onQueueState);
     };
   }, [socket, isConnected, lobbyId]);
 
@@ -96,10 +116,23 @@ export function useLobby({ user, lobbyId }: UseLobbyProps) {
     socket.emit("lobby:ready_updated", { lobbyId, ready });
   }
 
+  function startQueue() {
+    if (!lobbyId) return;
+    socket.emit("lobby:queue_start", { lobbyId });
+  }
+
+  function stopQueue() {
+    if (!lobbyId) return;
+    socket.emit("lobby:queue_stop", { lobbyId });
+  }
+
   return {
     players,
     lobbyState,
+    queueState,
     isConnected,
     setReady,
+    startQueue,
+    stopQueue,
   };
 }

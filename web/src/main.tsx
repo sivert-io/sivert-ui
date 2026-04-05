@@ -6,17 +6,20 @@ import { App } from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { SocketProvider } from "./socket/SocketProvider";
 import { NotificationsProvider } from "./notifications/NotificationsProvider";
+import { MatchFoundProvider } from "./matchmaking/MatchFoundProvider";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <SocketProvider>
-          <NotificationsProvider>
-            <div className="min-h-screen bg-background text-primary">
-              <App />
-            </div>
-          </NotificationsProvider>
+          <MatchFoundProvider>
+            <NotificationsProvider>
+              <div className="min-h-screen bg-background text-primary">
+                <App />
+              </div>
+            </NotificationsProvider>
+          </MatchFoundProvider>
         </SocketProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -205,7 +205,7 @@ export function getRankBadgeStyle(
       stage: 0,
       bgClassName: "bg-primary",
       fillClassName: "text-primary",
-      textClassName: "text-black",
+      textClassName: "text-background",
       className: `${BASE_BADGE_CLASS} text-primary`,
     };
   }

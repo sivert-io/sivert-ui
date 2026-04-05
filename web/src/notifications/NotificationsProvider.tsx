@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useSocket } from "../socket/useSocket";
 import { useAuth } from "../auth/useAuth";
@@ -10,6 +10,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { socket, isConnected } = useSocket();
   const { isSignedIn, isLoading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const inviteAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    inviteAudioRef.current = new Audio("/sounds/invite-received.mp3");
+    inviteAudioRef.current.preload = "auto";
+    inviteAudioRef.current.volume = 0.5;
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
@@ -56,15 +63,30 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         return [payload, ...prev];
       });
 
+      if (payload.type === "lobby_invite") {
+        const audio = inviteAudioRef.current;
+        if (audio) {
+          audio.currentTime = 0;
+          void audio.play().catch(() => {});
+        }
+      }
+
       toast(payload.title, {
         description: payload.body,
       });
     }
 
+    function onNotificationDeleted(payload: { id?: string }) {
+      if (!payload.id) return;
+      setNotifications((prev) => prev.filter((item) => item.id !== payload.id));
+    }
+
     socket.on("notification:new", onNotification);
+    socket.on("notification:deleted", onNotificationDeleted);
 
     return () => {
       socket.off("notification:new", onNotification);
+      socket.off("notification:deleted", onNotificationDeleted);
     };
   }, [socket]);
 
