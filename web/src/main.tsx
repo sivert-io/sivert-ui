@@ -9,9 +9,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <main className="bg-background fixed inset-0 text-primary">
+        <div className="fixed inset-0 bg-background text-primary">
           <App />
-        </main>
+        </div>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

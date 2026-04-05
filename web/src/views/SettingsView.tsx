@@ -1,17 +1,9 @@
-import { Navigate } from "react-router";
-import { useAuth } from "../auth/useAuth";
 import { Card } from "../components/Card";
 import { InputField } from "../components/InputField/InputField";
 import { Accordion } from "../components/Accordion";
 import { Link } from "../components/Link";
 
 export function SettingsView() {
-  const { isSignedIn, isLoading } = useAuth();
-
-  if (!isLoading && !isSignedIn) {
-    return <Navigate to="/login" replace />;
-  }
-
   return (
     <Card>
       <div className="flex flex-col gap-8">

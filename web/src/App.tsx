@@ -1,5 +1,5 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Navbar } from "./components/Navbar";
 import { SettingsView } from "./views/SettingsView";
 import { ProfileView } from "./views/ProfileView";
@@ -9,13 +9,14 @@ import { FrontPageView } from "./views/FrontPageView";
 import { useAuth } from "./auth/useAuth";
 import { AboutView } from "./views/AboutView";
 import { PrivacyPolicyView } from "./views/PrivacyPolicyView";
+import { PageTransition } from "./components/PageTransition";
 
 function AppLayout() {
   return (
     <div className="min-h-screen">
       <Navbar isInQueue={false} />
-      <main className="w-full">
-        <div className="max-w-7xl w-full mx-auto px-4 pt-24 pb-12">
+      <main className="w-full overflow-x-hidden">
+        <div className="mx-auto w-full max-w-7xl px-4 pt-24 pb-12">
           <Outlet />
         </div>
       </main>
@@ -43,10 +44,7 @@ function ProtectedRoute() {
   const { isSignedIn, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
-    return <AuthLoader />;
-  }
-
+  if (isLoading) return <AuthLoader />;
   if (!isSignedIn) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
@@ -57,13 +55,8 @@ function ProtectedRoute() {
 function PublicOnlyRoute() {
   const { isSignedIn, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <AuthLoader />;
-  }
-
-  if (isSignedIn) {
-    return <Navigate to="/" replace />;
-  }
+  if (isLoading) return <AuthLoader />;
+  if (isSignedIn) return <Navigate to="/" replace />;
 
   return <Outlet />;
 }
@@ -72,24 +65,80 @@ export function App() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<FrontPageView />} />
+          <Route
+            path="/"
+            element={
+              <PageTransition>
+                <FrontPageView />
+              </PageTransition>
+            }
+          />
 
           <Route element={<PublicOnlyRoute />}>
-            <Route path="/login" element={<LoginView />} />
+            <Route
+              path="/login"
+              element={
+                <PageTransition>
+                  <LoginView />
+                </PageTransition>
+              }
+            />
           </Route>
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/settings" element={<SettingsView />} />
-            <Route path="/profile" element={<ProfileView />} />
+            <Route
+              path="/settings"
+              element={
+                <PageTransition>
+                  <SettingsView />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PageTransition>
+                  <ProfileView />
+                </PageTransition>
+              }
+            />
           </Route>
 
-          <Route path="/privacy" element={<PrivacyPolicyView />} />
-          <Route path="/about" element={<AboutView />} />
-          <Route path="/profile/:steamId" element={<ProfileView />} />
-          <Route path="*" element={<NotFoundView />} />
+          <Route
+            path="/privacy"
+            element={
+              <PageTransition>
+                <PrivacyPolicyView />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <PageTransition>
+                <AboutView />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/profile/:steamId"
+            element={
+              <PageTransition>
+                <ProfileView />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <PageTransition>
+                <NotFoundView />
+              </PageTransition>
+            }
+          />
         </Route>
       </Routes>
     </AnimatePresence>
