@@ -13,7 +13,7 @@ export function InputField({
       )}
       <input
         className={cn(
-          "w-full rounded-2xl border border-primary/20 bg-black/10 px-4 py-3 text-primary outline-none transition placeholder:text-primary/40 focus:border-primary/40 focus:bg-black/15",
+          "w-full rounded-full border border-primary/20 bg-black/10 px-4 py-3 text-primary outline-none transition placeholder:text-primary/40 focus:border-primary/40 focus:bg-black/15",
           className,
         )}
         {...props}

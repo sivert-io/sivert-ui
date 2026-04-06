@@ -13,12 +13,40 @@ import { HoverDropdown } from "../components/Dropdown";
 import { API_BASE_URL } from "../lib/api";
 import { toast } from "sonner";
 import { useSocket } from "../socket/useSocket";
+import { FaSteam } from "react-icons/fa";
 
 type FriendRequestState =
   | "idle"
   | "pending_outgoing"
   | "pending_incoming"
   | "friends";
+
+function formatOrdinalDay(day: number) {
+  if (day >= 11 && day <= 13) return `${day}th`;
+
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+}
+
+function formatJoinedDate(dateString: string) {
+  const date = new Date(dateString);
+
+  const day = formatOrdinalDay(date.getDate());
+  const monthYear = date.toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return `${day} of ${monthYear}`;
+}
 
 function DropdownActionButton({
   children,
@@ -397,72 +425,81 @@ export function ProfileView() {
             </div>
 
             <p className="text-xs font-medium text-primary/70">
-              Joined:{" "}
-              {new Date(profile.createdAt).toLocaleString("en-GB", {
-                dateStyle: "long",
-              })}
+              Joined FLOW {formatJoinedDate(profile.createdAt)}
             </p>
 
             <RankProgressBar rank={profile.rank} />
           </div>
-        </div>
 
-        {isSignedIn && !isOwnProfile ? (
-          <div className="absolute top-12 right-6">
-            {friendRequestState === "friends" ? (
-              <HoverDropdown
-                placement="bottom-right"
-                trigger={({ toggle }) => (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              target="_blank"
+              size="sm"
+              square
+              href={`https://steamcommunity.com/profiles/${profile.steamId}`}
+            >
+              <FaSteam />
+            </Button>
+
+            {isSignedIn && !isOwnProfile ? (
+              <div>
+                {friendRequestState === "friends" ? (
+                  <HoverDropdown
+                    placement="bottom-right"
+                    trigger={({ toggle }) => (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        square
+                        onClick={toggle}
+                        className="h-8! w-8! p-0!"
+                      >
+                        <MdSettings size={16} />
+                      </Button>
+                    )}
+                  >
+                    <div className="flex min-w-44 flex-col gap-1">
+                      <DropdownActionButton
+                        onClick={handleInviteToLobby}
+                        disabled={isInvitingToLobby}
+                      >
+                        {isInvitingToLobby ? "Inviting..." : "Invite to lobby"}
+                      </DropdownActionButton>
+
+                      <DropdownActionButton
+                        danger
+                        onClick={handleRemoveFriend}
+                        disabled={isRemovingFriend}
+                      >
+                        {isRemovingFriend ? "Removing..." : "Remove friend"}
+                      </DropdownActionButton>
+                    </div>
+                  </HoverDropdown>
+                ) : (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    square
-                    onClick={toggle}
-                    className="h-8! w-8! p-0!"
+                    onClick={handleAddFriend}
+                    disabled={
+                      isSendingFriendRequest ||
+                      friendRequestState === "pending_outgoing" ||
+                      friendRequestState === "pending_incoming"
+                    }
                   >
-                    <MdSettings size={16} />
+                    <MdPersonAdd />
+                    {isSendingFriendRequest
+                      ? "Sending..."
+                      : friendRequestState === "pending_outgoing"
+                        ? "Request sent"
+                        : friendRequestState === "pending_incoming"
+                          ? "Sent you a request"
+                          : "Add friend"}
                   </Button>
                 )}
-              >
-                <div className="flex min-w-44 flex-col gap-1">
-                  <DropdownActionButton
-                    onClick={handleInviteToLobby}
-                    disabled={isInvitingToLobby}
-                  >
-                    {isInvitingToLobby ? "Inviting..." : "Invite to lobby"}
-                  </DropdownActionButton>
-
-                  <DropdownActionButton
-                    danger
-                    onClick={handleRemoveFriend}
-                    disabled={isRemovingFriend}
-                  >
-                    {isRemovingFriend ? "Removing..." : "Remove friend"}
-                  </DropdownActionButton>
-                </div>
-              </HoverDropdown>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleAddFriend}
-                disabled={
-                  isSendingFriendRequest ||
-                  friendRequestState === "pending_outgoing" ||
-                  friendRequestState === "pending_incoming"
-                }
-              >
-                <MdPersonAdd />
-                {isSendingFriendRequest
-                  ? "Sending..."
-                  : friendRequestState === "pending_outgoing"
-                    ? "Request sent"
-                    : friendRequestState === "pending_incoming"
-                      ? "Sent you a request"
-                      : "Add friend"}
-              </Button>
-            )}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </Card>
 
       <Card>

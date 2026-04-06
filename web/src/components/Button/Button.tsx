@@ -1,12 +1,12 @@
 import cn from "classnames";
 import type React from "react";
-import { Link } from "../Link";
 import type {
   ButtonColor,
   ButtonProps,
   ButtonVariant,
   ButtonSize,
 } from "./types";
+import { Link } from "react-router";
 
 const baseStyles =
   "rounded-full transform-gpu transition-transform duration-100 ease-out active:scale-[0.9] disabled:scale-[1] disabled:opacity-50 disabled:cursor-default!";
@@ -58,12 +58,13 @@ export function Button({
   size = "md",
   square = false,
   href,
+  target,
   className = "",
   type = "button",
   ...props
 }: Props) {
   const classes = cn(
-    "font-medium flex items-center justify-center gap-2 shrink-0",
+    "font-medium flex items-center justify-center gap-2 shrink-0 text-nowrap",
     baseStyles,
     styles[variant][color],
     square ? squareSizeStyles[size] : sizeStyles[size],
@@ -71,7 +72,7 @@ export function Button({
   );
 
   return href ? (
-    <Link className={classes} to={href}>
+    <Link className={classes} to={href} target={target}>
       {children}
     </Link>
   ) : (

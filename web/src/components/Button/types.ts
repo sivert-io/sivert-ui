@@ -17,5 +17,6 @@ export type ButtonProps = {
   size?: ButtonSize;
   square?: boolean;
   href?: string;
+  target?: string;
   className?: string;
 };
