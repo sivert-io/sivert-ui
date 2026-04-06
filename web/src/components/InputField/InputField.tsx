@@ -7,13 +7,11 @@ export function InputField({
   ...props
 }: InputFieldProps) {
   return (
-    <label className="block">
-      {label && (
-        <span className="mb-1 block text-sm text-primary">{label}</span>
-      )}
+    <label className="flex flex-col gap-1">
+      {label && <span className="pl-3 text-sm text-primary">{label}</span>}
       <input
         className={cn(
-          "w-full rounded-full border border-primary/20 bg-black/10 px-4 py-3 text-primary outline-none transition placeholder:text-primary/40 focus:border-primary/40 focus:bg-black/15",
+          "w-full rounded-full border text-sm border-primary/20 bg-black/10 px-2 py-1 text-primary outline-none transition placeholder:text-primary/40 focus:border-primary/40 focus:bg-black/15",
           className,
         )}
         {...props}

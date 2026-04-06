@@ -43,6 +43,10 @@ export function SettingsView() {
             placeholder="XXXX-XXXXX-XXXX"
           />
         </div>
+
+        <div className="flex flex-col gap-4">
+          <h2 className="font-medium text-lg">Match Notification Sound</h2>
+        </div>
       </div>
     </Card>
   );

@@ -27,8 +27,9 @@ export function MatchFoundProvider({ children }: Props) {
   const matchFound = isSignedIn ? rawMatchFound : null;
 
   useEffect(() => {
-    audioRef.current = new Audio("/sounds/match-found.mp3");
+    audioRef.current = new Audio("/sounds/match-found-flute.mp3");
     audioRef.current.preload = "auto";
+    audioRef.current.volume = 0.5;
   }, []);
 
   useEffect(() => {
