@@ -1,3 +1,4 @@
+import type React from "react";
 import { MdBadge, MdSettings, MdLogout, MdNotifications } from "react-icons/md";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
@@ -30,7 +31,7 @@ function DropdownLink({
       underline={false}
       to={to}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-primary transition hover:bg-white/10 whitespace-nowrap"
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm whitespace-nowrap text-foreground transition hover:bg-white/10"
     >
       {icon}
       {children}
@@ -320,7 +321,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
   }
 
   return (
-    <div className="fixed left-0 top-0 right-0 z-300 grid w-full place-items-center p-3">
+    <div className="fixed top-0 right-0 left-0 z-300 grid w-full place-items-center p-3">
       <div
         className={`relative w-full transition-all duration-100 ${
           isInQueue ? "max-w-lg" : "max-w-xl"
@@ -355,7 +356,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                   >
                     <MdNotifications size={18} />
                     {unreadCount > 0 && !isOpen ? (
-                      <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-secondary px-1 text-[10px] font-bold text-black">
+                      <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-secondary px-1 text-[10px] font-bold text-background">
                         {unreadCount}
                       </span>
                     ) : null}
@@ -372,7 +373,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                       <button
                         type="button"
                         onClick={clearNotifications}
-                        className="text-xs text-primary/70 transition hover:text-primary"
+                        className="text-xs text-foreground-muted transition hover:text-primary"
                       >
                         Clear
                       </button>
@@ -382,7 +383,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                   <Divider className="border-primary/20" />
 
                   {visibleNotifications.length === 0 ? (
-                    <div className="px-3 py-3 text-sm text-primary/70">
+                    <div className="px-3 py-3 text-sm text-foreground-muted">
                       No notifications yet
                     </div>
                   ) : (
@@ -400,7 +401,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                             key={
                               notification.id ?? `${notification.type}-${index}`
                             }
-                            className="rounded-xl px-3 py-3 text-sm text-primary transition hover:bg-white/10"
+                            className="rounded-xl px-3 py-3 text-sm text-foreground transition hover:bg-white/10"
                             onMouseEnter={() => {
                               if (notification.id && !notification.readAt) {
                                 void markAsRead(notification.id);
@@ -412,7 +413,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                             </div>
 
                             {notification.body ? (
-                              <div className="mt-1 text-primary/70">
+                              <div className="mt-1 text-foreground-muted">
                                 {notification.body}
                               </div>
                             ) : null}
@@ -422,7 +423,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                                 <Link
                                   to={`/profile/${senderSteamId}`}
                                   underline={false}
-                                  className="text-xs text-secondary transition hover:opacity-80"
+                                  className="text-xs text-info transition hover:opacity-80"
                                 >
                                   View profile
                                 </Link>
@@ -433,6 +434,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                               <div className="mt-3 flex gap-2">
                                 <Button
                                   variant="solid"
+                                  color="success"
                                   size="sm"
                                   onClick={() =>
                                     handleAcceptFriendRequest(notification)
@@ -443,6 +445,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
 
                                 <Button
                                   variant="ghost"
+                                  color="danger"
                                   size="sm"
                                   onClick={() =>
                                     handleDeclineFriendRequest(notification)
@@ -458,6 +461,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                                 <Button
                                   size="sm"
                                   variant="solid"
+                                  color="success"
                                   onClick={() =>
                                     handleAcceptInvite(notification)
                                   }
@@ -468,6 +472,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  color="danger"
                                   onClick={() =>
                                     handleDeclineInvite(notification)
                                   }
@@ -528,7 +533,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
 
                 <button
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-red-300 transition hover:bg-white/10"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-danger transition hover:bg-danger/10"
                 >
                   <span>
                     <MdLogout size={16} />

@@ -40,13 +40,15 @@ export function MatchFoundModal() {
 
   return (
     <Modal open={!!matchFound} setOpen={() => {}}>
-      <div className="space-y-6 text-primary">
+      <div className="space-y-6 text-foreground">
         <div className="flex flex-col items-center gap-2 text-center">
-          <h2 className="text-2xl font-semibold">Match found</h2>
-          <p className="text-sm text-primary/70">
+          <h2 className="text-2xl font-semibold text-primary">Match found</h2>
+          <p className="text-sm text-foreground-muted">
             All players must accept to start the match
           </p>
-          <p className="text-lg font-bold tabular-nums">{remainingLabel}</p>
+          <p className="text-lg font-bold tabular-nums text-warning">
+            {remainingLabel}
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -55,14 +57,14 @@ export function MatchFoundModal() {
               key={player.userId}
               className="flex items-center justify-between rounded-lg border border-primary/15 bg-primary/5 px-4 py-3"
             >
-              <span className="truncate font-medium">
+              <span className="truncate font-medium text-foreground">
                 {player.personaName ?? player.steamId}
               </span>
               <span
                 className={
                   player.accepted
-                    ? "text-sm font-bold text-green-400"
-                    : "text-sm font-bold text-primary/60"
+                    ? "text-sm font-bold text-success"
+                    : "text-sm font-bold text-foreground-muted"
                 }
               >
                 {player.accepted ? "Accepted" : "Waiting"}
@@ -74,12 +76,14 @@ export function MatchFoundModal() {
         <div className="flex items-center justify-center gap-3">
           <Button
             variant="outline"
+            color="danger"
             onClick={declineMatch}
             disabled={!matchFound}
           >
             Decline
           </Button>
           <Button
+            color={currentUserAccepted ? "success" : "primary"}
             onClick={acceptMatch}
             disabled={!matchFound || currentUserAccepted}
           >

@@ -1,19 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Lilex:ital,wght@0,100..700;1,100..700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Lilex:ital,wght@0,100..700;1,100..700&display=swap");
 @import "tailwindcss";
 
 @theme {
   --color-background: #201113;
-  --color-surface: #58262E;
-  --color-primary: #D9A6AE;
-  --color-secondary: #AEA6D9;
+  --color-surface: #58262e;
+  --color-surface-2: #6a313b;
+
+  --color-primary: #d9a6ae;
+  --color-secondary: #aea6d9;
+  --color-accent: #d7b3e6;
+
+  --color-success: #8fe0a8;
+  --color-warning: #f0c06b;
+  --color-danger: #A36872;
+  --color-info: #7fc8f8;
+
+  --color-foreground: #f3dadf;
+  --color-foreground-muted: #d6b8be;
+  --color-muted: #bfa7ac;
+  --color-border: #7a434d;
+
+  --color-surface-success: #1d3426;
+  --color-surface-warning: #3b2b16;
+  --color-surface-danger: #3b1f24;
+  --color-surface-info: #1b2f3d;
 
   --font-sans: "Lilex", monospace;
   --font-mono: "Lilex", monospace;
 }
 
+:root {
+  color-scheme: dark;
+}
+
 html,
 body {
   background: var(--color-background);
+  color: var(--color-foreground);
 }
 
 body {
@@ -24,6 +47,11 @@ body {
 
 button {
   cursor: pointer;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  color: var(--color-foreground);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -48,28 +76,64 @@ button {
   }
 }
 
+.app-surface {
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-foreground);
+}
+
+.app-surface-muted {
+  background: color-mix(in srgb, white 4%, transparent);
+  border: 1px solid color-mix(in srgb, white 10%, transparent);
+  color: var(--color-foreground-muted);
+}
+
+.app-surface-success {
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
+  color: var(--color-success);
+}
+
+.app-surface-warning {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 22%, transparent);
+  color: var(--color-warning);
+}
+
+.app-surface-danger {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 22%, transparent);
+  color: var(--color-danger);
+}
+
+.app-surface-info {
+  background: color-mix(in srgb, var(--color-info) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-info) 22%, transparent);
+  color: var(--color-info);
+}
+
 .app-toast {
-  background: var(--color-background) !important;
-  color: var(--color-primary) !important;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+  background: color-mix(in srgb, var(--color-surface) 76%, var(--color-background) 24%) !important;
+  color: var(--color-foreground) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
   box-shadow: none !important;
   font-family: var(--font-sans) !important;
-  border-radius: 8px !important;
-  backdrop-filter: blur(8px);
+  border-radius: 10px !important;
+  backdrop-filter: blur(10px);
 }
 
 .app-toast-title {
-  color: var(--color-primary) !important;
+  color: var(--color-foreground) !important;
   font-weight: 700 !important;
 }
 
 .app-toast-description {
-  color: color-mix(in srgb, var(--color-primary) 75%, white 25%) !important;
+  color: var(--color-foreground-muted) !important;
 }
 
 .app-toast-close {
   background: transparent !important;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
   color: var(--color-primary) !important;
 }
 
@@ -82,5 +146,29 @@ button {
 .app-toast-cancel {
   background: transparent !important;
   color: var(--color-primary) !important;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
+}
+
+.app-toast--success {
+  background: color-mix(in srgb, var(--color-surface-success) 82%, var(--color-background) 18%) !important;
+  color: var(--color-success) !important;
+  border: 1px solid color-mix(in srgb, var(--color-success) 24%, transparent) !important;
+}
+
+.app-toast--warning {
+  background: color-mix(in srgb, var(--color-surface-warning) 82%, var(--color-background) 18%) !important;
+  color: var(--color-warning) !important;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 24%, transparent) !important;
+}
+
+.app-toast--danger {
+  background: color-mix(in srgb, var(--color-surface-danger) 82%, var(--color-background) 18%) !important;
+  color: var(--color-danger) !important;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 24%, transparent) !important;
+}
+
+.app-toast--info {
+  background: color-mix(in srgb, var(--color-surface-info) 82%, var(--color-background) 18%) !important;
+  color: var(--color-info) !important;
+  border: 1px solid color-mix(in srgb, var(--color-info) 24%, transparent) !important;
 }

@@ -1,3 +1,4 @@
+import type React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -53,7 +54,7 @@ function KickablePlayerCard({
   return (
     <div className="relative">
       <Tooltip
-        wrapperClassName="absolute -right-0 -top-0 z-10"
+        wrapperClassName="absolute -top-0 -right-0 z-10"
         content={`Kick ${playerName ?? "player"}`}
         placement="top-center"
       >
@@ -62,6 +63,7 @@ function KickablePlayerCard({
           square
           size="sm"
           variant="ghost"
+          color="danger"
           aria-label={`Kick ${playerName ?? "player"} from lobby`}
           onClick={(e) => {
             e.stopPropagation();
@@ -342,15 +344,13 @@ export function Lobby({ user }: LobbyProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="absolute flex flex-col items-center gap-1"
+              className="absolute flex flex-col items-center gap-3"
             >
               <Spinner size={64} easing="snappy" duration={2} mode="fill" />
 
               <div className="flex flex-col items-center gap-1">
                 <p className="text-xs font-bold">You are in queue</p>
-                <p className="text-sm tabular-nums text-muted-foreground">
-                  {elapsedLabel}
-                </p>
+                <p className="text-sm tabular-nums">{elapsedLabel}</p>
               </div>
             </motion.div>
           )}
@@ -365,6 +365,7 @@ export function Lobby({ user }: LobbyProps) {
             <Button
               onClick={handleToggleQueue}
               variant={isInQueue ? "outline" : "solid"}
+              color={isInQueue ? "danger" : "primary"}
               disabled={disableQueueActions}
             >
               {isInQueue ? "Stop searching" : "Find match"}
@@ -384,6 +385,7 @@ export function Lobby({ user }: LobbyProps) {
             square
             size="sm"
             variant="ghost"
+            color="danger"
             disabled={disableQueueActions}
           >
             <MdOutlineDoorBack />

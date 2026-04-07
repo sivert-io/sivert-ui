@@ -1,3 +1,4 @@
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { MdPersonAdd, MdSettings } from "react-icons/md";
@@ -65,7 +66,7 @@ function DropdownActionButton({
       onClick={onClick}
       disabled={disabled}
       className={`flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 ${
-        danger ? "text-red-300" : "text-primary"
+        danger ? "text-danger" : "text-foreground"
       }`}
     >
       {children}
@@ -379,7 +380,7 @@ export function ProfileView() {
     return (
       <Card>
         <h1 className="mb-4 text-2xl font-bold">Player not found</h1>
-        <p className="text-primary/70">
+        <p className="text-foreground-muted">
           No player exists with Steam ID{" "}
           <span className="font-mono">{steamId}</span>.
         </p>
@@ -391,7 +392,7 @@ export function ProfileView() {
     return (
       <Card>
         <h1 className="mb-4 text-2xl font-bold">Something went wrong</h1>
-        <p className="text-primary/70">
+        <p className="text-foreground-muted">
           We could not load this profile right now.
         </p>
       </Card>
@@ -413,7 +414,7 @@ export function ProfileView() {
               className="h-20 w-20 rounded-full bg-black/20"
             />
           ) : (
-            <div className="h-20 w-20 rounded-full bg-white/10" />
+            <div className="h-20 w-20 rounded-full border border-border bg-surface" />
           )}
 
           <div className="flex w-full flex-col gap-1">
@@ -424,7 +425,7 @@ export function ProfileView() {
               <Rank rank={profile.rank} />
             </div>
 
-            <p className="text-xs font-medium text-primary/70">
+            <p className="text-xs font-medium text-foreground-muted">
               Joined FLOW {formatJoinedDate(profile.createdAt)}
             </p>
 
@@ -434,6 +435,7 @@ export function ProfileView() {
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
+              color="secondary"
               target="_blank"
               size="sm"
               square
@@ -451,6 +453,7 @@ export function ProfileView() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        color="secondary"
                         square
                         onClick={toggle}
                         className="h-8! w-8! p-0!"
@@ -479,6 +482,12 @@ export function ProfileView() {
                 ) : (
                   <Button
                     size="sm"
+                    color={
+                      friendRequestState === "pending_outgoing" ||
+                      friendRequestState === "pending_incoming"
+                        ? "warning"
+                        : "primary"
+                    }
                     onClick={handleAddFriend}
                     disabled={
                       isSendingFriendRequest ||
