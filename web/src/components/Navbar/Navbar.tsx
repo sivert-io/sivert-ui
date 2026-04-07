@@ -401,7 +401,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                             key={
                               notification.id ?? `${notification.type}-${index}`
                             }
-                            className="rounded-xl px-3 py-3 text-sm text-foreground transition hover:bg-white/10"
+                            className="rounded-xl px-3 py-3 text-sm text-foreground transition border border-transparent hover:border-primary/50"
                             onMouseEnter={() => {
                               if (notification.id && !notification.readAt) {
                                 void markAsRead(notification.id);
