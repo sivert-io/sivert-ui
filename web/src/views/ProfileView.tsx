@@ -15,6 +15,7 @@ import { API_BASE_URL } from "../lib/api";
 import { toast } from "sonner";
 import { useSocket } from "../socket/useSocket";
 import { FaSteam } from "react-icons/fa";
+import { HostBadge } from "../components/HostBadge";
 
 type FriendRequestState =
   | "idle"
@@ -91,6 +92,8 @@ export function ProfileView() {
     useState<FriendRequestState>("idle");
 
   const isOwnProfile = user?.steamId === profile?.steamId;
+  const shouldShowHostBadge =
+    profile?.hostStatus === "verified" && !!profile.hostBadgeVariant;
 
   const hasIncomingFriendRequestFromViewedProfile = useMemo(() => {
     if (!profile?.steamId) return false;
@@ -418,11 +421,17 @@ export function ProfileView() {
           )}
 
           <div className="flex w-full flex-col gap-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold">
                 {profile.personaName ?? "Unnamed player"}
               </h1>
               <Rank rank={profile.rank} />
+              {shouldShowHostBadge ? (
+                <HostBadge
+                  variant={profile.hostBadgeVariant ?? "verified"}
+                  size="sm"
+                />
+              ) : null}
             </div>
 
             <p className="text-xs font-medium text-foreground-muted">

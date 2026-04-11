@@ -68,9 +68,12 @@ export async function getSessionWithUser(sessionId: string) {
       u.avatar_medium,
       u.avatar_large,
       u.rank,
-      u.role
+      u.role,
+      hp.status AS host_status,
+      hp.badge_variant AS host_badge_variant
     FROM sessions s
     JOIN users u ON u.id = s.user_id
+    LEFT JOIN host_profiles hp ON hp.user_id = u.id
     WHERE s.id = $1
       AND s.expires_at > NOW()
       AND s.revoked_at IS NULL

@@ -1,3 +1,6 @@
+export type HostStatus = "pending" | "verified" | "rejected" | "suspended";
+export type HostBadgeVariant = "verified" | "founding";
+
 export type AuthUser = {
   id: string;
   steamId: string;
@@ -7,6 +10,8 @@ export type AuthUser = {
   avatarLarge: string | null;
   rank: number | null;
   role: string;
+  hostStatus: HostStatus | null;
+  hostBadgeVariant: HostBadgeVariant | null;
 };
 
 export type MeResponse =
@@ -27,4 +32,6 @@ export type PublicProfile = {
   avatarLarge: string | null;
   rank: number | null;
   createdAt: string;
+  hostStatus: HostStatus | null;
+  hostBadgeVariant: HostBadgeVariant | null;
 };

@@ -175,3 +175,117 @@ UPDATE lobby_invites
 SET expires_at = created_at + INTERVAL '30 seconds'
 WHERE expires_at IS NULL
   AND status = 'pending';
+
+CREATE TABLE IF NOT EXISTS host_profiles (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  badge_variant TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ,
+  CONSTRAINT host_profiles_status_check
+    CHECK (status IN ('pending', 'verified', 'rejected', 'suspended')),
+  CONSTRAINT host_profiles_badge_variant_check
+    CHECK (badge_variant IS NULL OR badge_variant IN ('verified', 'founding'))
+);
+
+CREATE TABLE IF NOT EXISTS servers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  display_name TEXT NOT NULL,
+  ip_address TEXT NOT NULL,
+  port INTEGER NOT NULL,
+  country TEXT,
+  region TEXT,
+  contact TEXT,
+  status TEXT NOT NULL DEFAULT 'pending_verification',
+  verification_status TEXT NOT NULL DEFAULT 'pending',
+  verification_token TEXT NOT NULL,
+  plugin_version TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  approved_at TIMESTAMPTZ,
+  drained_at TIMESTAMPTZ,
+  removed_at TIMESTAMPTZ,
+  last_heartbeat_at TIMESTAMPTZ,
+  last_seen_at TIMESTAMPTZ,
+  CONSTRAINT servers_status_check
+    CHECK (
+      status IN (
+        'pending_verification',
+        'verified',
+        'needs_attention',
+        'draining',
+        'suspended',
+        'removed'
+      )
+    ),
+  CONSTRAINT servers_verification_status_check
+    CHECK (
+      verification_status IN ('pending', 'passed', 'failed')
+    ),
+  CONSTRAINT servers_port_check
+    CHECK (port >= 1 AND port <= 65535)
+);
+
+CREATE INDEX IF NOT EXISTS idx_servers_owner_user_id
+  ON servers(owner_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_servers_status
+  ON servers(status);
+
+CREATE INDEX IF NOT EXISTS idx_servers_region_status
+  ON servers(region, status);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_servers_owner_ip_port_active
+  ON servers(owner_user_id, ip_address, port)
+  WHERE removed_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS server_verifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  verification_token TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  failure_reason TEXT,
+  CONSTRAINT server_verifications_status_check
+    CHECK (status IN ('pending', 'passed', 'failed', 'rotated', 'expired'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_server_verifications_server_id
+  ON server_verifications(server_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_verifications_status
+  ON server_verifications(status);
+
+CREATE TABLE IF NOT EXISTS server_heartbeats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'online',
+  plugin_version TEXT,
+  payload JSONB,
+  received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT server_heartbeats_status_check
+    CHECK (status IN ('online', 'offline', 'idle', 'in_match'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_server_heartbeats_server_id_received_at
+  ON server_heartbeats(server_id, received_at DESC);
+
+CREATE TABLE IF NOT EXISTS server_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  actor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_server_audit_logs_server_id_created_at
+  ON server_audit_logs(server_id, created_at DESC);
+
+ALTER TABLE servers
+ADD COLUMN IF NOT EXISTS host_input TEXT;

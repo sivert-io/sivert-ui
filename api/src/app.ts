@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import { ZodError } from "zod";
 import authRoutes from "./modules/auth/auth.routes.js";
 import { sessionMiddleware } from "./middleware/session.middleware.js";
 import { config } from "./config.js";
@@ -7,6 +8,7 @@ import inviteRoutes from "./modules/invites/invite.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import lobbyRoutes from "./modules/lobbies/lobby.routes.js";
 import friendRoutes from "./modules/friends/friend.routes.js";
+import hostRoutes from "./modules/hosts/host.routes.js";
 
 export const app = express();
 
@@ -54,6 +56,7 @@ app.use("/invites", inviteRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/lobbies", lobbyRoutes);
 app.use("/friends", friendRoutes);
+app.use("/hosts", hostRoutes);
 
 app.use(
   (
@@ -63,6 +66,13 @@ app.use(
     _next: express.NextFunction,
   ) => {
     console.error(err);
+
+    if (err instanceof ZodError) {
+      return res.status(400).json({
+        error: "Invalid request",
+        details: err.flatten(),
+      });
+    }
 
     return res.status(500).json({
       error: "Internal server error",

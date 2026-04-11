@@ -109,15 +109,18 @@ router.get("/profiles/:steamId", async (req, res, next) => {
     const result = await db.query(
       `
       SELECT
-        steam_id,
-        persona_name,
-        avatar_small,
-        avatar_medium,
-        avatar_large,
-        rank,
-        created_at
-      FROM users
-      WHERE steam_id = $1
+        u.steam_id,
+        u.persona_name,
+        u.avatar_small,
+        u.avatar_medium,
+        u.avatar_large,
+        u.rank,
+        u.created_at,
+        hp.status AS host_status,
+        hp.badge_variant AS host_badge_variant
+      FROM users u
+      LEFT JOIN host_profiles hp ON hp.user_id = u.id
+      WHERE u.steam_id = $1
       LIMIT 1
       `,
       [steamId],
@@ -140,6 +143,8 @@ router.get("/profiles/:steamId", async (req, res, next) => {
         avatarLarge: user.avatar_large,
         rank: user.rank,
         createdAt: user.created_at,
+        hostStatus: user.host_status ?? null,
+        hostBadgeVariant: user.host_badge_variant ?? null,
       },
     });
   } catch (error) {

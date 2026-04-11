@@ -11,6 +11,8 @@ declare global {
       avatarLarge: string | null;
       rank: number | null;
       role: string;
+      hostStatus: "pending" | "verified" | "rejected" | "suspended" | null;
+      hostBadgeVariant: "verified" | "founding" | null;
     }
 
     interface Request {

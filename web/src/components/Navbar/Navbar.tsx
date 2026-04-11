@@ -1,5 +1,11 @@
 import type React from "react";
-import { MdBadge, MdSettings, MdLogout, MdNotifications } from "react-icons/md";
+import {
+  MdBadge,
+  MdSettings,
+  MdLogout,
+  MdNotifications,
+  MdDns,
+} from "react-icons/md";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../Button";
@@ -14,6 +20,7 @@ import { FaSteam } from "react-icons/fa";
 import { useNotifications } from "../../notifications/useNotifications";
 import { API_BASE_URL } from "../../lib/api";
 import { toast } from "sonner";
+import { HostBadge } from "../HostBadge";
 
 function DropdownLink({
   to,
@@ -320,6 +327,9 @@ export function Navbar({ isInQueue }: NavbarProps) {
     }
   }
 
+  const showHostBadge =
+    user?.hostStatus === "verified" && !!user.hostBadgeVariant;
+
   return (
     <div className="fixed top-0 right-0 left-0 z-300 grid w-full place-items-center p-3">
       <div
@@ -338,7 +348,13 @@ export function Navbar({ isInQueue }: NavbarProps) {
               <Skeleton className="h-3.5 w-16 rounded-full" />
             </div>
           ) : !isSignedIn ? (
-            <Button variant="solid" size="sm" onClick={signIn}>
+            <Button
+              variant="solid"
+              size="sm"
+              onClick={() => {
+                signIn();
+              }}
+            >
               Sign in <FaSteam />
             </Button>
           ) : (
@@ -401,7 +417,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                             key={
                               notification.id ?? `${notification.type}-${index}`
                             }
-                            className="rounded-xl px-3 py-3 text-sm text-foreground transition border border-transparent hover:border-primary/50"
+                            className="rounded-xl border border-transparent px-3 py-3 text-sm text-foreground transition hover:border-primary/50"
                             onMouseEnter={() => {
                               if (notification.id && !notification.readAt) {
                                 void markAsRead(notification.id);
@@ -507,11 +523,7 @@ export function Navbar({ isInQueue }: NavbarProps) {
                           className="h-5 w-5 rounded-full"
                         />
                       ) : null}
-                      <span
-                        className={`max-w-28 truncate text-xs ${
-                          user?.role === "admin" ? "text-secondary" : ""
-                        }`}
-                      >
+                      <span className="max-w-28 truncate text-xs">
                         {user?.personaName ?? "Account"}
                       </span>
                     </>
@@ -528,6 +540,18 @@ export function Navbar({ isInQueue }: NavbarProps) {
                 <DropdownLink to="/settings" icon={<MdSettings size={16} />}>
                   Settings
                 </DropdownLink>
+
+                <Divider className="border-primary/20" />
+
+                {!user?.hostStatus ? (
+                  <DropdownLink to="/host" icon={<MdDns size={16} />}>
+                    Host a server
+                  </DropdownLink>
+                ) : (
+                  <DropdownLink to="/servers" icon={<MdDns size={16} />}>
+                    My servers
+                  </DropdownLink>
+                )}
 
                 <Divider className="border-primary/20" />
 

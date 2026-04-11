@@ -30,6 +30,8 @@ export async function sessionMiddleware(
       avatarLarge: session.avatar_large,
       rank: session.rank,
       role: session.role,
+      hostStatus: session.host_status ?? null,
+      hostBadgeVariant: session.host_badge_variant ?? null,
     };
 
     return next();

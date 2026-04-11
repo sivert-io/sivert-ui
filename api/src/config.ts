@@ -20,6 +20,8 @@ const envSchema = z.object({
 
   SESSION_COOKIE_NAME: z.string().default("sid"),
   SESSION_TTL_DAYS: z.coerce.number().default(30),
+
+  GEO_IP_LOOKUP_TIMEOUT_MS: z.coerce.number().default(2500),
 });
 
 export const config = envSchema.parse(process.env);

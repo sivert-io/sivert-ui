@@ -13,6 +13,10 @@ import { PageTransition } from "./components/PageTransition";
 import { Toaster } from "sonner";
 import { useNotifications } from "./notifications/useNotifications";
 import { CreditsView } from "./views/CreditsView";
+import { HostView } from "./views/HostView";
+import { ServersView } from "./views/ServersView";
+import { ServerApplyView } from "./views/ServerApplyView";
+import { ServerDetailsView } from "./views/ServerDetailsView";
 
 function RealtimeEffects() {
   useNotifications();
@@ -54,7 +58,7 @@ function AuthLoader() {
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.2 }}
         className="text-sm text-primary/70"
-      ></motion.div>
+      />
     </div>
   );
 }
@@ -96,6 +100,15 @@ export function App() {
             }
           />
 
+          <Route
+            path="/host"
+            element={
+              <PageTransition>
+                <HostView />
+              </PageTransition>
+            }
+          />
+
           <Route element={<PublicOnlyRoute />}>
             <Route
               path="/login"
@@ -121,6 +134,30 @@ export function App() {
               element={
                 <PageTransition>
                   <ProfileView />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/servers"
+              element={
+                <PageTransition>
+                  <ServersView />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/servers/apply"
+              element={
+                <PageTransition>
+                  <ServerApplyView />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/servers/:serverId"
+              element={
+                <PageTransition>
+                  <ServerDetailsView />
                 </PageTransition>
               }
             />
