@@ -48,7 +48,7 @@ export function PlayerCard({
               transition={{ duration: 0.2, ease: "easeInOut" }}
             >
               <Button
-                disabled={disableInvite}
+                disabled={disableInvite || isOffline}
                 square
                 onClick={onClick}
                 className="flex h-48 w-36 flex-col items-center justify-center gap-4 rounded-lg border border-primary/25 bg-primary/5 p-6"
@@ -74,12 +74,12 @@ export function PlayerCard({
               key={playerData.steamId}
               type="button"
               onClick={onClick}
-              disabled={disabled}
+              disabled={disabled || isOffline}
               title={title}
               className={cn(
                 "relative flex h-full w-full flex-col items-center justify-between gap-4 rounded-lg border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
                 isOffline
-                  ? "border-white/10 bg-white/5 text-primary/60 opacity-60 hover:bg-white/10"
+                  ? "border-white/10 bg-white/5 text-primary/60 opacity-60 cursor-default!"
                   : "border-primary/25 bg-primary/5 hover:bg-primary/10",
                 resolvedStatusLabel === "invited" && "border-secondary",
               )}

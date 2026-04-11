@@ -7,6 +7,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { SocketProvider } from "./socket/SocketProvider";
 import { NotificationsProvider } from "./notifications/NotificationsProvider";
 import { MatchFoundProvider } from "./matchmaking/MatchFoundProvider";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
             <NotificationsProvider>
               <div className="min-h-screen bg-background text-primary">
                 <App />
+                <ScrollToTop />
               </div>
             </NotificationsProvider>
           </MatchFoundProvider>

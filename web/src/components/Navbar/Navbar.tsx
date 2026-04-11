@@ -31,7 +31,7 @@ function DropdownLink({
       underline={false}
       to={to}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm whitespace-nowrap text-foreground transition hover:bg-white/10"
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm whitespace-nowrap transition hover:bg-white/10"
     >
       {icon}
       {children}
