@@ -9,7 +9,6 @@ import {
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../Button";
-import type { NavbarProps } from "./types";
 import { useAuth } from "../../auth/useAuth";
 import { Skeleton } from "../Skeleton";
 import { Divider } from "../Divider/Divider";
@@ -18,9 +17,9 @@ import { Logo } from "../Logo";
 import { Link } from "../Link";
 import { FaSteam } from "react-icons/fa";
 import { useNotifications } from "../../notifications/useNotifications";
+import { useLobby } from "../../hooks/useLobby";
 import { API_BASE_URL } from "../../lib/api";
 import { toast } from "sonner";
-import { HostBadge } from "../HostBadge";
 
 function DropdownLink({
   to,
@@ -110,11 +109,41 @@ function isExpiredLobbyInvite(notification: { type: string; data?: unknown }) {
   return expiresAtMs <= Date.now();
 }
 
-export function Navbar({ isInQueue }: NavbarProps) {
+function QueueBadge({
+  isSearching,
+  elapsedLabel,
+  onClick,
+}: {
+  isSearching: boolean;
+  elapsedLabel: string | null;
+  onClick: () => void;
+}) {
+  if (!isSearching) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary transition hover:border-secondary/35 hover:bg-secondary/15"
+      title="Open lobby"
+    >
+      <span className="inline-block h-2 w-2 rounded-full bg-secondary" />
+      <span>Searching</span>
+      <span className="tabular-nums text-foreground">
+        {elapsedLabel ?? "0:00"}
+      </span>
+    </button>
+  );
+}
+
+export function Navbar() {
   const navigate = useNavigate();
   const { user, isSignedIn, isLoading, signIn, signOut } = useAuth();
   const { notifications, markAsRead, clearNotifications, deleteNotification } =
     useNotifications();
+  const { queueState, queueElapsedLabel } = useLobby();
+
+  const isInQueue = !!queueState?.isSearching;
 
   const visibleNotifications = useMemo(
     () =>
@@ -327,20 +356,25 @@ export function Navbar({ isInQueue }: NavbarProps) {
     }
   }
 
-  const showHostBadge =
-    user?.hostStatus === "verified" && !!user.hostBadgeVariant;
-
   return (
     <div className="fixed top-0 right-0 left-0 z-300 grid w-full place-items-center p-3">
       <div
         className={`relative w-full transition-all duration-100 ${
-          isInQueue ? "max-w-lg" : "max-w-xl"
+          isInQueue ? "max-w-2xl" : "max-w-xl"
         }`}
       >
-        <nav className="flex justify-between rounded-full border border-primary/20 bg-black/10 p-1.5 backdrop-blur-sm">
-          <Button href="/" variant="ghost" size="sm" className="px-3">
-            <Logo solid className="h-3.5" />
-          </Button>
+        <nav className="flex items-center justify-between rounded-full border border-primary/20 bg-black/10 p-1.5 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <Button href="/" variant="ghost" size="sm" className="px-3">
+              <Logo solid className="h-3.5" />
+            </Button>
+
+            <QueueBadge
+              isSearching={isInQueue}
+              elapsedLabel={queueElapsedLabel}
+              onClick={() => navigate("/")}
+            />
+          </div>
 
           {isLoading ? (
             <div className="flex items-center gap-2 rounded-full px-3 py-1.5">
@@ -572,3 +606,5 @@ export function Navbar({ isInQueue }: NavbarProps) {
     </div>
   );
 }
+
+export default Navbar;

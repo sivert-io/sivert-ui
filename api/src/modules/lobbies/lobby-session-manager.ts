@@ -157,6 +157,13 @@ export class LobbySessionManager {
     return { lobbyId, state: this.serializeLobby(lobbyId) };
   }
 
+  getMemberSocketIds(lobbyId: string, userId: string) {
+    const lobby = this.lobbies.get(lobbyId);
+    const member = lobby?.members.get(userId);
+
+    return member ? [...member.socketIds] : [];
+  }
+
   explicitLeaveLobby(lobbyId: string, userId: string) {
     const lobby = this.lobbies.get(lobbyId);
     if (!lobby) return null;

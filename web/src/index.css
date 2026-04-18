@@ -2,28 +2,28 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #201113;
-  --color-surface: #58262e;
-  --color-surface-2: #6a313b;
+  --color-background: #17153b;
+  --color-surface: #211d52;
+  --color-surface-2: #2e236c;
 
-  --color-primary: #d9a6ae;
-  --color-secondary: #aea6d9;
-  --color-accent: #d7b3e6;
+  --color-primary: #c8acd6;
+  --color-secondary: #9b8cff;
+  --color-accent: #7a88ff;
 
-  --color-success: #8fe0a8;
-  --color-warning: #f0c06b;
-  --color-danger: #A36872;
-  --color-info: #7fc8f8;
+  --color-success: #9fe3ba;
+  --color-warning: #f2cf87;
+  --color-danger: #f0a8b7;
+  --color-info: #9dc7ff;
 
-  --color-foreground: #f3dadf;
-  --color-foreground-muted: #d6b8be;
-  --color-muted: #bfa7ac;
-  --color-border: #7a434d;
+  --color-foreground: #f7f4fb;
+  --color-foreground-muted: #ddd3e6;
+  --color-muted: #b7acc7;
+  --color-border: #433d8b;
 
-  --color-surface-success: #1d3426;
-  --color-surface-warning: #3b2b16;
-  --color-surface-danger: #3b1f24;
-  --color-surface-info: #1b2f3d;
+  --color-surface-success: #1a2a23;
+  --color-surface-warning: #2c2519;
+  --color-surface-danger: #2d1b24;
+  --color-surface-info: #1a2440;
 
   --font-sans: "Lilex", monospace;
   --font-mono: "Lilex", monospace;
@@ -50,7 +50,7 @@ button {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-primary) 32%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 28%, transparent);
   color: var(--color-foreground);
 }
 
@@ -58,7 +58,7 @@ button {
   html {
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.35) var(--color-background);
+    scrollbar-color: rgba(200, 172, 214, 0.26) var(--color-background);
   }
 
   ::-webkit-scrollbar {
@@ -67,7 +67,7 @@ button {
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(200, 172, 214, 0.26);
     border-radius: 999px;
   }
 
@@ -77,46 +77,46 @@ button {
 }
 
 .app-surface {
-  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 90%, black 10%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
   color: var(--color-foreground);
 }
 
 .app-surface-muted {
-  background: color-mix(in srgb, white 4%, transparent);
-  border: 1px solid color-mix(in srgb, white 10%, transparent);
+  background: color-mix(in srgb, var(--color-surface-2) 84%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-foreground-muted);
 }
 
 .app-surface-success {
-  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-surface) 90%);
   border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
   color: var(--color-success);
 }
 
 .app-surface-warning {
-  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-surface) 90%);
   border: 1px solid color-mix(in srgb, var(--color-warning) 22%, transparent);
   color: var(--color-warning);
 }
 
 .app-surface-danger {
-  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface) 90%);
   border: 1px solid color-mix(in srgb, var(--color-danger) 22%, transparent);
   color: var(--color-danger);
 }
 
 .app-surface-info {
-  background: color-mix(in srgb, var(--color-info) 10%, transparent);
+  background: color-mix(in srgb, var(--color-info) 10%, var(--color-surface) 90%);
   border: 1px solid color-mix(in srgb, var(--color-info) 22%, transparent);
   color: var(--color-info);
 }
 
 .app-toast {
-  background: color-mix(in srgb, var(--color-surface) 76%, var(--color-background) 24%) !important;
+  background: color-mix(in srgb, var(--color-surface) 88%, var(--color-background) 12%) !important;
   color: var(--color-foreground) !important;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
-  box-shadow: none !important;
+  border: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.34) !important;
   font-family: var(--font-sans) !important;
   border-radius: 10px !important;
   backdrop-filter: blur(10px);
@@ -150,25 +150,25 @@ button {
 }
 
 .app-toast--success {
-  background: color-mix(in srgb, var(--color-surface-success) 82%, var(--color-background) 18%) !important;
+  background: color-mix(in srgb, var(--color-surface-success) 88%, var(--color-background) 12%) !important;
   color: var(--color-success) !important;
-  border: 1px solid color-mix(in srgb, var(--color-success) 24%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent) !important;
 }
 
 .app-toast--warning {
-  background: color-mix(in srgb, var(--color-surface-warning) 82%, var(--color-background) 18%) !important;
+  background: color-mix(in srgb, var(--color-surface-warning) 88%, var(--color-background) 12%) !important;
   color: var(--color-warning) !important;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 24%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 22%, transparent) !important;
 }
 
 .app-toast--danger {
-  background: color-mix(in srgb, var(--color-surface-danger) 82%, var(--color-background) 18%) !important;
+  background: color-mix(in srgb, var(--color-surface-danger) 88%, var(--color-background) 12%) !important;
   color: var(--color-danger) !important;
-  border: 1px solid color-mix(in srgb, var(--color-danger) 24%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 22%, transparent) !important;
 }
 
 .app-toast--info {
-  background: color-mix(in srgb, var(--color-surface-info) 82%, var(--color-background) 18%) !important;
+  background: color-mix(in srgb, var(--color-surface-info) 88%, var(--color-background) 12%) !important;
   color: var(--color-info) !important;
-  border: 1px solid color-mix(in srgb, var(--color-info) 24%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-info) 22%, transparent) !important;
 }

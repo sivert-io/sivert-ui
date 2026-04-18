@@ -157,6 +157,46 @@ export async function createServer(input: {
   return readJson<{ server: ServerRecord }>(response);
 }
 
+export async function updateServer(input: {
+  serverId: string;
+  address: string;
+  port?: number;
+  displayName: string;
+  country?: string;
+  region?: string;
+  contact?: string;
+}) {
+  const response = await fetch(
+    `${API_BASE_URL}/hosts/servers/${input.serverId}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        address: input.address,
+        port: input.port,
+        displayName: input.displayName,
+        country: input.country,
+        region: input.region,
+        contact: input.contact,
+      }),
+    },
+  );
+
+  return readJson<{ server: ServerRecord }>(response);
+}
+
+export async function removeServer(serverId: string) {
+  const response = await fetch(`${API_BASE_URL}/hosts/servers/${serverId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  return readJson<{ ok: true }>(response);
+}
+
 export async function getServerDetails(serverId: string) {
   const response = await fetch(`${API_BASE_URL}/hosts/servers/${serverId}`, {
     credentials: "include",

@@ -18,6 +18,15 @@ const createServerSchema = z.object({
   contact: z.string().trim().max(255).optional(),
 });
 
+const updateServerSchema = z.object({
+  address: z.string().trim().min(1).max(255),
+  port: z.coerce.number().int().min(1).max(65535).optional(),
+  displayName: z.string().trim().min(1).max(120),
+  country: z.string().trim().max(120).optional(),
+  region: z.string().trim().max(120).optional(),
+  contact: z.string().trim().max(255).optional(),
+});
+
 const verifyServerSchema = z.object({
   token: z.string().trim().min(1),
   pluginVersion: z.string().trim().max(64).optional(),
@@ -105,6 +114,51 @@ router.post("/servers", requireAuth, async (req, res, next) => {
     });
 
     return res.status(201).json({ server });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch("/servers/:serverId", requireAuth, async (req, res, next) => {
+  try {
+    const { serverId } = req.params;
+    const body = updateServerSchema.parse(req.body);
+
+    const server = await hostService.updateServer({
+      userId: req.user!.id,
+      serverId,
+      address: body.address,
+      port: body.port ?? null,
+      displayName: body.displayName,
+      country: body.country ?? null,
+      region: body.region ?? null,
+      contact: body.contact ?? null,
+    });
+
+    if (!server) {
+      return res.status(404).json({ error: "Server not found" });
+    }
+
+    return res.status(200).json({ server });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete("/servers/:serverId", requireAuth, async (req, res, next) => {
+  try {
+    const { serverId } = req.params;
+
+    const removed = await hostService.removeServer({
+      userId: req.user!.id,
+      serverId,
+    });
+
+    if (!removed) {
+      return res.status(404).json({ error: "Server not found" });
+    }
+
+    return res.status(200).json({ ok: true });
   } catch (error) {
     return next(error);
   }

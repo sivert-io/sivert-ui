@@ -20,12 +20,25 @@ function normalizeHost(host: string) {
   return host.trim().replace(/^\[|\]$/g, "");
 }
 
-export function parseServerAddress(input: string): ParsedServerAddress {
-  const raw = input.trim();
+function sanitizeAddressInput(input: string) {
+  const trimmed = input.trim();
 
-  if (!raw) {
+  if (!trimmed) {
     throw new Error("Address is required");
   }
+
+  const withoutProtocol = trimmed.replace(/^[a-z]+:\/\//i, "");
+  const withoutPath = withoutProtocol.split(/[/?#]/)[0]?.trim() ?? "";
+
+  if (!withoutPath) {
+    throw new Error("Enter a valid server address or hostname");
+  }
+
+  return withoutPath;
+}
+
+export function parseServerAddress(input: string): ParsedServerAddress {
+  const raw = sanitizeAddressInput(input);
 
   // [ipv6]:port
   const bracketedIpv6 = raw.match(/^\[([^\]]+)\](?::(\d+))?$/);
@@ -71,12 +84,18 @@ export function parseServerAddress(input: string): ParsedServerAddress {
     }
   }
 
+  const host = normalizeHost(raw);
+
+  if (!host || /\s/.test(host)) {
+    throw new Error("Enter a valid server address or hostname");
+  }
+
   // raw ipv6, raw ipv4, raw hostname
   return {
     originalInput: raw,
-    host: normalizeHost(raw),
+    host,
     port: null,
-    isIp: isIP(normalizeHost(raw)) !== 0,
+    isIp: isIP(host) !== 0,
   };
 }
 

@@ -41,7 +41,7 @@ export function FrontPageView() {
   if (user) {
     return (
       <Card>
-        <Lobby user={user} />
+        <Lobby />
       </Card>
     );
   }

@@ -18,6 +18,22 @@ type CreateServerInput = {
   contact?: string | null;
 };
 
+type UpdateServerInput = {
+  userId: string;
+  serverId: string;
+  address: string;
+  port?: number | null;
+  displayName: string;
+  country?: string | null;
+  region?: string | null;
+  contact?: string | null;
+};
+
+type RemoveServerInput = {
+  userId: string;
+  serverId: string;
+};
+
 type VerifyServerInput = {
   userId: string;
   serverId: string;
@@ -323,12 +339,12 @@ export class HostService {
           $2,
           'server_created',
           jsonb_build_object(
-            'displayName', $3,
-            'hostInput', $4,
-            'ipAddress', $5,
-            'port', $6,
-            'country', $7,
-            'region', $8
+            'displayName', to_jsonb($3::text),
+            'hostInput', to_jsonb($4::text),
+            'ipAddress', to_jsonb($5::text),
+            'port', to_jsonb($6::int),
+            'country', to_jsonb($7::text),
+            'region', to_jsonb($8::text)
           )
         )
         `,
@@ -347,6 +363,211 @@ export class HostService {
       await client.query("COMMIT");
 
       return mapServer(server);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateServer(input: UpdateServerInput) {
+    const existingResult = await db.query(
+      `
+      SELECT id
+      FROM servers
+      WHERE id = $1
+        AND owner_user_id = $2
+        AND removed_at IS NULL
+      LIMIT 1
+      `,
+      [input.serverId, input.userId],
+    );
+
+    if (!existingResult.rows[0]) {
+      return null;
+    }
+
+    const resolved = await resolveServerAddress(input.address);
+    const inferred = await inferServerLocation(input.address);
+    const verificationToken = generateVerificationToken();
+
+    const finalPort = input.port ?? resolved.port ?? 27015;
+    const country = normalizeOptionalText(input.country) ?? inferred.country;
+    const region = normalizeOptionalText(input.region) ?? inferred.region;
+    const contact = normalizeOptionalText(input.contact);
+
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const serverResult = await client.query(
+        `
+        UPDATE servers
+        SET
+          host_input = $3,
+          display_name = $4,
+          ip_address = $5,
+          port = $6,
+          country = $7,
+          region = $8,
+          contact = $9,
+          verification_token = $10,
+          verification_status = 'pending',
+          status = 'pending_verification',
+          plugin_version = NULL,
+          last_heartbeat_at = NULL,
+          last_seen_at = NULL,
+          drained_at = NULL,
+          updated_at = NOW()
+        WHERE id = $1
+          AND owner_user_id = $2
+          AND removed_at IS NULL
+        RETURNING
+          id,
+          owner_user_id,
+          host_input,
+          display_name,
+          ip_address,
+          port,
+          country,
+          region,
+          contact,
+          status,
+          verification_status,
+          verification_token,
+          plugin_version,
+          last_heartbeat_at,
+          last_seen_at,
+          approved_at,
+          drained_at,
+          removed_at,
+          created_at,
+          updated_at
+        `,
+        [
+          input.serverId,
+          input.userId,
+          resolved.hostInput,
+          input.displayName,
+          resolved.resolvedIp,
+          finalPort,
+          country,
+          region,
+          contact,
+          verificationToken,
+        ],
+      );
+
+      const server = serverResult.rows[0];
+
+      await client.query(
+        `
+        INSERT INTO server_verifications (
+          server_id,
+          verification_token,
+          status
+        )
+        VALUES ($1, $2, 'pending')
+        `,
+        [input.serverId, verificationToken],
+      );
+
+      await client.query(
+        `
+        INSERT INTO server_audit_logs (
+          server_id,
+          actor_user_id,
+          action,
+          details
+        )
+        VALUES (
+          $1,
+          $2,
+          'server_updated',
+          jsonb_build_object(
+            'displayName', to_jsonb($3::text),
+            'hostInput', to_jsonb($4::text),
+            'ipAddress', to_jsonb($5::text),
+            'port', to_jsonb($6::int),
+            'country', to_jsonb($7::text),
+            'region', to_jsonb($8::text),
+            'contact', to_jsonb($9::text)
+          )
+        )
+        `,
+        [
+          input.serverId,
+          input.userId,
+          input.displayName,
+          resolved.hostInput,
+          resolved.resolvedIp,
+          finalPort,
+          country,
+          region,
+          contact,
+        ],
+      );
+
+      await client.query("COMMIT");
+
+      return mapServer(server);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async removeServer(input: RemoveServerInput) {
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const result = await client.query(
+        `
+        UPDATE servers
+        SET
+          status = 'removed',
+          removed_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $1
+          AND owner_user_id = $2
+          AND removed_at IS NULL
+        RETURNING id
+        `,
+        [input.serverId, input.userId],
+      );
+
+      if (!result.rows[0]) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+
+      await client.query(
+        `
+        INSERT INTO server_audit_logs (
+          server_id,
+          actor_user_id,
+          action,
+          details
+        )
+        VALUES (
+          $1,
+          $2,
+          'server_removed',
+          jsonb_build_object('removed', true)
+        )
+        `,
+        [input.serverId, input.userId],
+      );
+
+      await client.query("COMMIT");
+
+      return { id: input.serverId };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -377,6 +598,7 @@ export class HostService {
         s.approved_at,
         s.drained_at,
         s.removed_at,
+        s.created_at,
         s.created_at,
         s.updated_at
       FROM servers s
@@ -519,41 +741,10 @@ export class HostService {
         await client.query("COMMIT");
 
         return {
-          ok: false,
-          error: "Verification token mismatch",
-        } as const;
+          ok: false as const,
+          error: "Verification token did not match",
+        };
       }
-
-      await client.query(
-        `
-        UPDATE servers
-        SET verification_status = 'passed',
-            status = 'verified',
-            plugin_version = COALESCE($2, plugin_version),
-            approved_at = COALESCE(approved_at, NOW()),
-            updated_at = NOW()
-        WHERE id = $1
-        `,
-        [input.serverId, input.pluginVersion ?? null],
-      );
-
-      await client.query(
-        `
-        UPDATE host_profiles
-        SET status = CASE
-              WHEN status = 'suspended' THEN status
-              ELSE 'verified'
-            END,
-            badge_variant = CASE
-              WHEN badge_variant IS NULL THEN 'verified'
-              ELSE badge_variant
-            END,
-            reviewed_at = NOW(),
-            updated_at = NOW()
-        WHERE user_id = $1
-        `,
-        [input.userId],
-      );
 
       await client.query(
         `
@@ -566,6 +757,19 @@ export class HostService {
         VALUES ($1, $2, 'passed', NOW())
         `,
         [input.serverId, input.token],
+      );
+
+      await client.query(
+        `
+        UPDATE servers
+        SET verification_status = 'passed',
+            status = 'verified',
+            plugin_version = COALESCE($2, plugin_version),
+            approved_at = COALESCE(approved_at, NOW()),
+            updated_at = NOW()
+        WHERE id = $1
+        `,
+        [input.serverId, input.pluginVersion ?? null],
       );
 
       await client.query(
@@ -588,7 +792,7 @@ export class HostService {
         [input.serverId, input.userId, input.pluginVersion ?? null],
       );
 
-      const refreshedResult = await client.query(
+      const updatedServerResult = await client.query(
         `
         SELECT
           id,
@@ -621,9 +825,9 @@ export class HostService {
       await client.query("COMMIT");
 
       return {
-        ok: true,
-        server: mapServer(refreshedResult.rows[0]),
-      } as const;
+        ok: true as const,
+        server: mapServer(updatedServerResult.rows[0]),
+      };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -633,127 +837,17 @@ export class HostService {
   }
 
   async rotateServerToken(input: RotateServerTokenInput) {
-    const serverResult = await db.query(
-      `
-      SELECT id
-      FROM servers
-      WHERE id = $1
-        AND owner_user_id = $2
-        AND removed_at IS NULL
-      LIMIT 1
-      `,
-      [input.serverId, input.userId],
-    );
+    const verificationToken = generateVerificationToken();
 
-    if (!serverResult.rows[0]) {
-      return null;
-    }
-
-    const nextToken = generateVerificationToken();
-
-    const client = await db.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      await client.query(
-        `
-        UPDATE servers
-        SET verification_token = $2,
-            verification_status = 'pending',
-            status = CASE
-              WHEN status = 'suspended' THEN status
-              ELSE 'pending_verification'
-            END,
-            updated_at = NOW()
-        WHERE id = $1
-        `,
-        [input.serverId, nextToken],
-      );
-
-      await client.query(
-        `
-        INSERT INTO server_verifications (
-          server_id,
-          verification_token,
-          status
-        )
-        VALUES ($1, $2, 'rotated')
-        `,
-        [input.serverId, nextToken],
-      );
-
-      await client.query(
-        `
-        INSERT INTO server_audit_logs (
-          server_id,
-          actor_user_id,
-          action,
-          details
-        )
-        VALUES (
-          $1,
-          $2,
-          'verification_token_rotated',
-          jsonb_build_object('verificationToken', $3)
-        )
-        `,
-        [input.serverId, input.userId, nextToken],
-      );
-
-      const refreshedResult = await client.query(
-        `
-        SELECT
-          id,
-          owner_user_id,
-          host_input,
-          display_name,
-          ip_address,
-          port,
-          country,
-          region,
-          contact,
-          status,
-          verification_status,
-          verification_token,
-          plugin_version,
-          last_heartbeat_at,
-          last_seen_at,
-          approved_at,
-          drained_at,
-          removed_at,
-          created_at,
-          updated_at
-        FROM servers
-        WHERE id = $1
-        LIMIT 1
-        `,
-        [input.serverId],
-      );
-
-      await client.query("COMMIT");
-
-      return mapServer(refreshedResult.rows[0]);
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  async setDrainMode(input: SetDrainModeInput) {
     const result = await db.query(
       `
       UPDATE servers
-      SET status = CASE
-            WHEN $3 = true THEN 'draining'
-            WHEN verification_status = 'passed' THEN 'verified'
-            ELSE 'needs_attention'
-          END,
-          drained_at = CASE
-            WHEN $3 = true THEN NOW()
-            ELSE NULL
+      SET verification_token = $3,
+          verification_status = 'pending',
+          status = CASE
+            WHEN status = 'removed' THEN status
+            WHEN status = 'suspended' THEN status
+            ELSE 'pending_verification'
           END,
           updated_at = NOW()
       WHERE id = $1
@@ -781,12 +875,23 @@ export class HostService {
         created_at,
         updated_at
       `,
-      [input.serverId, input.userId, input.enabled],
+      [input.serverId, input.userId, verificationToken],
     );
 
-    if (!result.rows[0]) {
-      return null;
-    }
+    const server = result.rows[0];
+    if (!server) return null;
+
+    await db.query(
+      `
+      INSERT INTO server_verifications (
+        server_id,
+        verification_token,
+        status
+      )
+      VALUES ($1, $2, 'pending')
+      `,
+      [input.serverId, verificationToken],
+    );
 
     await db.query(
       `
@@ -799,74 +904,35 @@ export class HostService {
       VALUES (
         $1,
         $2,
-        'drain_mode_changed',
-        jsonb_build_object('enabled', $3)
+        'server_token_rotated',
+        jsonb_build_object('reason', 'manual')
       )
       `,
-      [input.serverId, input.userId, input.enabled],
+      [input.serverId, input.userId],
     );
 
-    return mapServer(result.rows[0]);
+    return mapServer(server);
   }
 
-  async recordHeartbeat(input: RecordHeartbeatInput) {
-    const serverResult = await db.query(
-      `
-      SELECT id, verification_token
-      FROM servers
-      WHERE id = $1
-        AND removed_at IS NULL
-      LIMIT 1
-      `,
-      [input.serverId],
-    );
-
-    const server = serverResult.rows[0];
-
-    if (!server) {
-      return null;
-    }
-
-    if (String(server.verification_token) !== input.token) {
-      return {
-        ok: false,
-        error: "Invalid server token",
-      } as const;
-    }
-
-    const heartbeatStatus = input.status ?? "online";
-
-    await db.query(
-      `
-      INSERT INTO server_heartbeats (
-        server_id,
-        status,
-        plugin_version,
-        payload
-      )
-      VALUES ($1, $2, $3, $4::jsonb)
-      `,
-      [
-        input.serverId,
-        heartbeatStatus,
-        input.pluginVersion ?? null,
-        JSON.stringify(input.payload ?? {}),
-      ],
-    );
-
-    const updatedResult = await db.query(
+  async setDrainMode(input: SetDrainModeInput) {
+    const result = await db.query(
       `
       UPDATE servers
-      SET last_heartbeat_at = NOW(),
-          last_seen_at = NOW(),
-          plugin_version = COALESCE($2, plugin_version),
-          status = CASE
-            WHEN status = 'draining' THEN status
-            WHEN verification_status = 'passed' THEN 'verified'
-            ELSE status
-          END,
-          updated_at = NOW()
+      SET
+        status = CASE
+          WHEN removed_at IS NOT NULL THEN status
+          WHEN $3 = true THEN 'draining'
+          WHEN verification_status = 'passed' THEN 'verified'
+          ELSE 'needs_attention'
+        END,
+        drained_at = CASE
+          WHEN $3 = true THEN COALESCE(drained_at, NOW())
+          ELSE NULL
+        END,
+        updated_at = NOW()
       WHERE id = $1
+        AND owner_user_id = $2
+        AND removed_at IS NULL
       RETURNING
         id,
         owner_user_id,
@@ -889,13 +955,162 @@ export class HostService {
         created_at,
         updated_at
       `,
-      [input.serverId, input.pluginVersion ?? null],
+      [input.serverId, input.userId, input.enabled],
     );
 
-    return {
-      ok: true,
-      server: mapServer(updatedResult.rows[0]),
-    } as const;
+    const server = result.rows[0];
+    if (!server) return null;
+
+    await db.query(
+      `
+      INSERT INTO server_audit_logs (
+        server_id,
+        actor_user_id,
+        action,
+        details
+      )
+      VALUES (
+        $1,
+        $2,
+        'server_drain_mode_changed',
+        jsonb_build_object('enabled', $3)
+      )
+      `,
+      [input.serverId, input.userId, input.enabled],
+    );
+
+    return mapServer(server);
+  }
+
+  async recordHeartbeat(input: RecordHeartbeatInput) {
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const serverResult = await client.query(
+        `
+        SELECT
+          id,
+          owner_user_id,
+          host_input,
+          display_name,
+          ip_address,
+          port,
+          country,
+          region,
+          contact,
+          status,
+          verification_status,
+          verification_token,
+          plugin_version,
+          last_heartbeat_at,
+          last_seen_at,
+          approved_at,
+          drained_at,
+          removed_at,
+          created_at,
+          updated_at
+        FROM servers
+        WHERE id = $1
+          AND removed_at IS NULL
+        LIMIT 1
+        `,
+        [input.serverId],
+      );
+
+      const server = serverResult.rows[0];
+      if (!server) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+
+      if (String(server.verification_token) !== input.token) {
+        await client.query("ROLLBACK");
+        return {
+          ok: false as const,
+          error: "Invalid verification token",
+        };
+      }
+
+      await client.query(
+        `
+        INSERT INTO server_heartbeats (
+          server_id,
+          status,
+          plugin_version,
+          payload
+        )
+        VALUES ($1, COALESCE($2, 'online'), $3, $4::jsonb)
+        `,
+        [
+          input.serverId,
+          input.status ?? "online",
+          input.pluginVersion ?? null,
+          JSON.stringify(input.payload ?? null),
+        ],
+      );
+
+      await client.query(
+        `
+        UPDATE servers
+        SET
+          plugin_version = COALESCE($2, plugin_version),
+          last_heartbeat_at = NOW(),
+          last_seen_at = NOW(),
+          updated_at = NOW(),
+          status = CASE
+            WHEN status = 'draining' THEN status
+            WHEN verification_status = 'passed' THEN 'verified'
+            ELSE status
+          END
+        WHERE id = $1
+        `,
+        [input.serverId, input.pluginVersion ?? null],
+      );
+
+      const updatedServerResult = await client.query(
+        `
+        SELECT
+          id,
+          owner_user_id,
+          host_input,
+          display_name,
+          ip_address,
+          port,
+          country,
+          region,
+          contact,
+          status,
+          verification_status,
+          verification_token,
+          plugin_version,
+          last_heartbeat_at,
+          last_seen_at,
+          approved_at,
+          drained_at,
+          removed_at,
+          created_at,
+          updated_at
+        FROM servers
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [input.serverId],
+      );
+
+      await client.query("COMMIT");
+
+      return {
+        ok: true as const,
+        server: mapServer(updatedServerResult.rows[0]),
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }
 

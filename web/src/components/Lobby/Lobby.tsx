@@ -6,20 +6,11 @@ import { MdClose, MdOutlineDoorBack } from "react-icons/md";
 import { toast } from "sonner";
 import { useLobby } from "../../hooks/useLobby";
 import { PlayerCard } from "../PlayerCard";
-import type { LobbyProps } from "./types";
 import { InviteModal } from "./InviteModal";
 import { Spinner } from "../Spinner";
 import { Button } from "../Button";
 import { API_BASE_URL } from "../../lib/api";
 import { Tooltip } from "../Tooltip";
-
-function formatElapsed(ms: number) {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
 
 function formatOfflineDuration(disconnectedAt?: number | null) {
   if (!disconnectedAt) return "Offline";
@@ -35,12 +26,6 @@ function formatOfflineDuration(disconnectedAt?: number | null) {
 
   return `Offline for ${seconds}s`;
 }
-
-type CurrentLobbyResponse = {
-  lobby: {
-    lobbyId: string;
-  };
-};
 
 function KickablePlayerCard({
   children,
@@ -79,35 +64,33 @@ function KickablePlayerCard({
   );
 }
 
-export function Lobby({ user }: LobbyProps) {
+type CurrentLobbyResponse = {
+  lobby: {
+    lobbyId: string;
+  };
+};
+
+export function Lobby() {
   const navigate = useNavigate();
 
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [lobbyId, setLobbyId] = useState<string | null>(null);
   const [isLobbyLoading, setIsLobbyLoading] = useState(true);
   const [, setPresenceNow] = useState(Date.now());
-  const [queueNow, setQueueNow] = useState(Date.now());
   const [isQueueHydrated, setIsQueueHydrated] = useState(false);
   const [isQueueMutating, setIsQueueMutating] = useState(false);
   const [isLeavingLobby, setIsLeavingLobby] = useState(false);
 
-  useEffect(() => {
-    function onLobbyChanged(event: Event) {
-      const customEvent = event as CustomEvent<{ lobbyId?: string }>;
-      const nextLobbyId = customEvent.detail?.lobbyId;
-
-      if (!nextLobbyId) return;
-
-      setLobbyId(nextLobbyId);
-      setShowInviteModal(false);
-    }
-
-    window.addEventListener("lobby:changed", onLobbyChanged);
-
-    return () => {
-      window.removeEventListener("lobby:changed", onLobbyChanged);
-    };
-  }, []);
+  const {
+    lobbyId,
+    players,
+    queueState,
+    queueElapsedLabel,
+    startQueue,
+    stopQueue,
+    kickMember,
+    isLobbyOwner,
+    refreshLobby,
+  } = useLobby();
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +110,11 @@ export function Lobby({ user }: LobbyProps) {
         const data: CurrentLobbyResponse = await response.json();
 
         if (!cancelled) {
-          setLobbyId(data.lobby.lobbyId);
+          window.dispatchEvent(
+            new CustomEvent("lobby:changed", {
+              detail: { lobbyId: data.lobby.lobbyId },
+            }),
+          );
         }
       } catch (error) {
         console.error(error);
@@ -148,11 +135,6 @@ export function Lobby({ user }: LobbyProps) {
     };
   }, []);
 
-  const { players, queueState, startQueue, stopQueue } = useLobby({
-    user,
-    lobbyId: lobbyId ?? "",
-  });
-
   useEffect(() => {
     if (!lobbyId) {
       setIsQueueHydrated(false);
@@ -172,23 +154,6 @@ export function Lobby({ user }: LobbyProps) {
     !isQueueKnown ||
     isQueueMutating ||
     isLeavingLobby;
-
-  const elapsedLabel =
-    isInQueue && queueState?.startedAt
-      ? formatElapsed(queueNow - new Date(queueState.startedAt).getTime())
-      : null;
-
-  useEffect(() => {
-    if (!isInQueue || !queueState?.startedAt) return;
-
-    setQueueNow(Date.now());
-
-    const interval = window.setInterval(() => {
-      setQueueNow(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, [isInQueue, queueState?.startedAt]);
 
   const hasOfflinePlayers = useMemo(
     () => players.some((player) => player && player.connected === false),
@@ -216,7 +181,6 @@ export function Lobby({ user }: LobbyProps) {
         return;
       }
 
-      setQueueNow(Date.now());
       await startQueue();
     } catch (error) {
       console.error(error);
@@ -237,8 +201,18 @@ export function Lobby({ user }: LobbyProps) {
     navigate(`/profile/${steamId}`);
   }
 
-  function handleKickFromLobby(steamId: string) {
-    console.log("Kick from lobby:", steamId);
+  async function handleKickFromLobby(
+    player: NonNullable<(typeof players)[number]>,
+  ) {
+    if (!lobbyId || !player.userId || isInQueue || !isLobbyOwner) return;
+
+    try {
+      await kickMember(player.userId);
+      toast(`${player.personaName ?? "Player"} was kicked from the lobby`);
+    } catch (error) {
+      console.error(error);
+      toast(error instanceof Error ? error.message : "Failed to kick player");
+    }
   }
 
   async function handleLeaveLobby() {
@@ -258,13 +232,7 @@ export function Lobby({ user }: LobbyProps) {
         throw new Error(data?.error ?? "Failed to leave lobby");
       }
 
-      const nextLobbyId = data?.lobby?.lobbyId;
-
-      if (!nextLobbyId) {
-        throw new Error("Lobby left, but no new lobby was returned");
-      }
-
-      setLobbyId(nextLobbyId);
+      await refreshLobby();
       setShowInviteModal(false);
       toast("You left the lobby");
     } catch (error) {
@@ -311,14 +279,20 @@ export function Lobby({ user }: LobbyProps) {
       />
     );
 
-    if (isInQueue || !isQueueKnown || isQueueMutating || isOurselves) {
+    if (
+      isInQueue ||
+      !isQueueKnown ||
+      isQueueMutating ||
+      isOurselves ||
+      !isLobbyOwner
+    ) {
       return playerCard;
     }
 
     return (
       <KickablePlayerCard
         playerName={player.personaName ?? undefined}
-        onKick={() => handleKickFromLobby(player.steamId)}
+        onKick={() => void handleKickFromLobby(player)}
       >
         {playerCard}
       </KickablePlayerCard>
@@ -350,7 +324,7 @@ export function Lobby({ user }: LobbyProps) {
 
               <div className="flex flex-col items-center gap-1">
                 <p className="text-xs font-bold">You are in queue</p>
-                <p className="text-sm tabular-nums">{elapsedLabel}</p>
+                <p className="text-sm tabular-nums">{queueElapsedLabel}</p>
               </div>
             </motion.div>
           )}

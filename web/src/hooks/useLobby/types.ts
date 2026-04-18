@@ -16,6 +16,7 @@ export type LobbyMember = {
 
 export type LobbyState = {
   lobbyId: string;
+  ownerUserId: string | null;
   members: LobbyMember[];
 } | null;
 
@@ -26,12 +27,14 @@ export type LobbyQueueState = {
 } | null;
 
 export type LobbyPlayerSlot = {
+  userId: string;
   steamId: string;
   personaName: string | null;
   avatarSmall: string | null;
   avatarMedium: string | null;
   avatarLarge: string | null;
   rank: number | null;
+  role: string;
   createdAt: string;
   ready?: boolean;
   connected?: boolean;
@@ -42,12 +45,14 @@ export type LobbyPlayerSlot = {
 
 export type UseLobbyProps = {
   user: {
+    id: string;
     steamId: string;
     personaName: string | null;
     avatarSmall: string | null;
     avatarMedium: string | null;
     avatarLarge: string | null;
     rank: number | null;
+    role: string;
   };
   lobbyId: string;
 };

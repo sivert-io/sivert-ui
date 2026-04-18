@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "../components/Card";
 import { InputField } from "../components/InputField/InputField";
 import { Button } from "../components/Button";
-import { Accordion } from "../components/Accordion";
 import {
   createHostApplication,
   createServer,
@@ -50,6 +49,52 @@ function StepPill({
   );
 }
 
+function ChecklistItem({
+  checked,
+  title,
+  children,
+  onToggle,
+}: {
+  checked: boolean;
+  title: string;
+  children: React.ReactNode;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={[
+        "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition",
+        checked
+          ? "border-success/25 bg-success/10"
+          : "border-primary/15 bg-black/10 hover:border-primary/25",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold",
+          checked ? "bg-success text-background" : "bg-white/10 text-primary",
+        ].join(" ")}
+      >
+        {checked ? "✓" : "•"}
+      </div>
+      <div>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="mt-1 text-sm text-foreground-muted">{children}</p>
+      </div>
+    </button>
+  );
+}
+
+function sanitizeAddressInput(value: string) {
+  return value
+    .trim()
+    .replace(/^[a-z]+:\/\//i, "")
+    .split(/[/?#]/)[0]
+    .trim();
+}
+
 export function ServerApplyView() {
   const { refreshAuth } = useAuth();
 
@@ -66,20 +111,33 @@ export function ServerApplyView() {
   const [detectedCountry, setDetectedCountry] = useState("");
   const [detectedRegion, setDetectedRegion] = useState("");
   const [resolvedIp, setResolvedIp] = useState("");
-  const [resolvedPort, setResolvedPort] = useState<number | null>(null);
 
-  const canGoToVerification = useMemo(() => {
-    return address.trim() && port.trim() && serverName.trim() && contact.trim();
-  }, [address, port, serverName, contact]);
+  const [understandsBadge, setUnderstandsBadge] = useState(false);
+  const [understandsPlugin, setUnderstandsPlugin] = useState(false);
+  const [understandsRules, setUnderstandsRules] = useState(false);
+
+  const sanitizedAddress = useMemo(
+    () => sanitizeAddressInput(address),
+    [address],
+  );
+
+  const canContinueFromChecklist =
+    understandsBadge && understandsPlugin && understandsRules;
+
+  const canCreateServer = useMemo(() => {
+    return (
+      sanitizedAddress.length > 0 &&
+      port.trim().length > 0 &&
+      serverName.trim().length > 0 &&
+      contact.trim().length > 0
+    );
+  }, [sanitizedAddress, port, serverName, contact]);
 
   useEffect(() => {
-    const trimmed = address.trim();
-
-    if (!trimmed) {
+    if (!sanitizedAddress) {
       setDetectedCountry("");
       setDetectedRegion("");
       setResolvedIp("");
-      setResolvedPort(null);
       return;
     }
 
@@ -87,17 +145,15 @@ export function ServerApplyView() {
       try {
         setIsDetectingLocation(true);
 
-        const result = await discoverServerLocation(trimmed);
+        const result = await discoverServerLocation(sanitizedAddress);
 
         setDetectedCountry(result.location.country ?? "");
         setDetectedRegion(result.location.region ?? "");
         setResolvedIp(result.location.resolvedIp ?? "");
-        setResolvedPort(result.location.port ?? null);
       } catch {
         setDetectedCountry("");
         setDetectedRegion("");
         setResolvedIp("");
-        setResolvedPort(null);
       } finally {
         setIsDetectingLocation(false);
       }
@@ -106,10 +162,10 @@ export function ServerApplyView() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [address]);
+  }, [sanitizedAddress]);
 
   async function handleCreateApplicationAndServer() {
-    if (!canGoToVerification) return;
+    if (!canCreateServer) return;
 
     setIsSubmitting(true);
 
@@ -119,7 +175,7 @@ export function ServerApplyView() {
       });
 
       const created = await createServer({
-        address: address.trim(),
+        address: sanitizedAddress,
         port: Number(port),
         displayName: serverName.trim(),
         country: detectedCountry || undefined,
@@ -143,17 +199,17 @@ export function ServerApplyView() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
       <div className="flex flex-col gap-3">
         <StepPill
           index={1}
-          label="Eligibility"
+          label="Checklist"
           active={step === 1}
           complete={step > 1}
         />
         <StepPill
           index={2}
-          label="Server details"
+          label="Server info"
           active={step === 2}
           complete={step > 2}
         />
@@ -161,9 +217,8 @@ export function ServerApplyView() {
           index={3}
           label="Verification"
           active={step === 3}
-          complete={step > 3}
+          complete={false}
         />
-        <StepPill index={4} label="Review" active={step === 4} />
       </div>
 
       <Card>
@@ -174,30 +229,47 @@ export function ServerApplyView() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
                   Step 1
                 </p>
-                <h1 className="text-2xl font-bold">Host eligibility</h1>
+                <h1 className="text-2xl font-bold">Before you apply</h1>
                 <p className="text-sm text-foreground-muted">
-                  Hosting is lightweight to join, but approved servers still
-                  need to meet basic trust and operational requirements.
+                  Confirm these three points before continuing.
                 </p>
               </div>
 
-              <div className="grid gap-3 text-sm">
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  Your server should have stable uptime and predictable
-                  connectivity.
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  You must install the FLOW plugin to verify ownership and
-                  exchange server health data.
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  Hosts are expected to follow platform rules and avoid
-                  tampering, griefing, or manipulation.
-                </div>
+              <div className="grid gap-3">
+                <ChecklistItem
+                  checked={understandsBadge}
+                  onToggle={() => setUnderstandsBadge((value) => !value)}
+                  title="I understand the host badge is public"
+                >
+                  Approved hosting status becomes part of your public profile.
+                </ChecklistItem>
+
+                <ChecklistItem
+                  checked={understandsPlugin}
+                  onToggle={() => setUnderstandsPlugin((value) => !value)}
+                  title="I understand plugin verification is required"
+                >
+                  You must install the FLOW plugin and add a verification token
+                  to prove server ownership.
+                </ChecklistItem>
+
+                <ChecklistItem
+                  checked={understandsRules}
+                  onToggle={() => setUnderstandsRules((value) => !value)}
+                  title="I understand the server must be stable and fair"
+                >
+                  Your server should stay reachable, and you are expected to
+                  follow platform rules and respond if issues come up.
+                </ChecklistItem>
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={() => setStep(2)}>Continue</Button>
+                <Button
+                  onClick={() => setStep(2)}
+                  disabled={!canContinueFromChecklist}
+                >
+                  I understand, continue
+                </Button>
               </div>
             </>
           ) : null}
@@ -208,9 +280,9 @@ export function ServerApplyView() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
                   Step 2
                 </p>
-                <h1 className="text-2xl font-bold">Server details</h1>
+                <h1 className="text-2xl font-bold">Server info</h1>
                 <p className="text-sm text-foreground-muted">
-                  You can enter an IP, domain, or domain with port.
+                  Add the public address and basic contact info. Keep it short.
                 </p>
               </div>
 
@@ -225,10 +297,12 @@ export function ServerApplyView() {
                   label="Port *"
                   placeholder="27015"
                   value={port}
-                  onChange={(e) => setPort(e.target.value)}
+                  onChange={(e) =>
+                    setPort(e.target.value.replace(/[^\d]/g, ""))
+                  }
                 />
                 <InputField
-                  label="Server display name *"
+                  label="Public server name *"
                   placeholder="FLOW Oslo #1"
                   value={serverName}
                   onChange={(e) => setServerName(e.target.value)}
@@ -242,13 +316,21 @@ export function ServerApplyView() {
               </div>
 
               <InputField
-                label="Application notes"
-                placeholder="Optional notes about hardware, region coverage, or availability"
+                label="Notes"
+                placeholder="Optional details about region, hardware, or availability"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
 
               <div className="grid gap-3 rounded-2xl border border-primary/15 bg-black/10 p-4 md:grid-cols-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+                    Clean input
+                  </p>
+                  <p className="mt-1 break-all text-sm">
+                    {sanitizedAddress || "Unknown"}
+                  </p>
+                </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
                     Resolved IP
@@ -261,17 +343,7 @@ export function ServerApplyView() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Resolved port
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {isDetectingLocation
-                      ? "Resolving..."
-                      : (resolvedPort ?? Number(port))}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Detected country
+                    Country
                   </p>
                   <p className="mt-1 text-sm">
                     {isDetectingLocation
@@ -281,7 +353,7 @@ export function ServerApplyView() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Matchmaking region
+                    Region
                   </p>
                   <p className="mt-1 text-sm">
                     {isDetectingLocation
@@ -297,9 +369,9 @@ export function ServerApplyView() {
                 </Button>
                 <Button
                   onClick={handleCreateApplicationAndServer}
-                  disabled={!canGoToVerification || isSubmitting}
+                  disabled={!canCreateServer || isSubmitting}
                 >
-                  {isSubmitting ? "Submitting..." : "Continue"}
+                  {isSubmitting ? "Submitting..." : "Create application"}
                 </Button>
               </div>
             </>
@@ -313,8 +385,8 @@ export function ServerApplyView() {
                 </p>
                 <h1 className="text-2xl font-bold">Verify ownership</h1>
                 <p className="text-sm text-foreground-muted">
-                  Install the FLOW plugin on your server and add the token below
-                  to the plugin configuration.
+                  Add this token to the FLOW plugin on your server, then verify
+                  from the server page.
                 </p>
               </div>
 
@@ -332,91 +404,11 @@ export function ServerApplyView() {
                   1. Install the FLOW server plugin
                 </div>
                 <div className="rounded-2xl border border-primary/15 bg-black/10 p-4 text-sm">
-                  2. Add the token to your plugin config
+                  2. Paste in your verification token
                 </div>
                 <div className="rounded-2xl border border-primary/15 bg-black/10 p-4 text-sm">
-                  3. Restart or reload your server
-                </div>
-                <div className="rounded-2xl border border-secondary/20 bg-secondary/10 p-4 text-sm text-secondary">
-                  4. Open the server page and run verification when your plugin
-                  is ready
-                </div>
-              </div>
-
-              <Accordion label="Why do I need to verify ownership?">
-                <p className="text-sm text-foreground-muted">
-                  Verification prevents users from registering servers they do
-                  not control and lets FLOW confirm that your plugin is working
-                  correctly.
-                </p>
-              </Accordion>
-
-              <div className="flex justify-between gap-3">
-                <Button variant="ghost" onClick={() => setStep(2)}>
-                  Back
-                </Button>
-                <Button onClick={() => setStep(4)}>Continue</Button>
-              </div>
-            </>
-          ) : null}
-
-          {step === 4 ? (
-            <>
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                  Step 4
-                </p>
-                <h1 className="text-2xl font-bold">Review submission</h1>
-                <p className="text-sm text-foreground-muted">
-                  Your host profile and server have been created. Continue to
-                  the dashboard or open the server page to verify it.
-                </p>
-              </div>
-
-              <div className="grid gap-3">
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Server
-                  </p>
-                  <p className="mt-1 text-sm">{serverName}</p>
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Address input
-                  </p>
-                  <p className="mt-1 text-sm">{address}</p>
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Resolved endpoint
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {resolvedIp || "Unknown"}:{resolvedPort ?? Number(port)}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Location
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {[detectedCountry, detectedRegion]
-                      .filter(Boolean)
-                      .join(" · ") || "Unknown"}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                    Token issued
-                  </p>
-                  <p className="mt-1 break-all text-sm font-mono">
-                    {createdToken ?? "Unavailable"}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-secondary/20 bg-secondary/10 p-4">
-                  <p className="text-sm font-medium text-secondary">
-                    Verification is still required before the server becomes
-                    fully approved
-                  </p>
+                  3. Restart or reload the server, then verify it in the
+                  dashboard
                 </div>
               </div>
 

@@ -10,6 +10,8 @@ export const SOCKET_EVENTS = {
   LOBBY_LEAVE: "lobby:leave",
   LOBBY_STATE: "lobby:state",
   LOBBY_READY_UPDATED: "lobby:ready_updated",
+  LOBBY_MEMBER_KICK: "lobby:member_kick",
+  LOBBY_KICKED: "lobby:kicked",
 
   LOBBY_QUEUE_START: "lobby:queue_start",
   LOBBY_QUEUE_STOP: "lobby:queue_stop",

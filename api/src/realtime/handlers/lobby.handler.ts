@@ -156,6 +156,105 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
     },
   );
 
+  socket.on(
+    SOCKET_EVENTS.LOBBY_MEMBER_KICK,
+    async ({ lobbyId, targetUserId }, ack) => {
+      try {
+        if (!lobbyId) {
+          return ack?.({ ok: false, error: "lobbyId is required" });
+        }
+
+        if (!targetUserId) {
+          return ack?.({ ok: false, error: "targetUserId is required" });
+        }
+
+        if (lobbyQueueManager.isSearching(lobbyId)) {
+          return ack?.({
+            ok: false,
+            error: "You cannot kick players while searching",
+          });
+        }
+
+        const isMember = await assertLobbyMembership(lobbyId, user.id);
+        if (!isMember) {
+          return ack?.({ ok: false, error: "Not a member of this lobby" });
+        }
+
+        const kickResult = await lobbyService.kickLobbyMemberAndCreateNewLobby({
+          lobbyId,
+          actorUserId: user.id,
+          targetUserId,
+        });
+
+        if (!kickResult.ok) {
+          return ack?.({ ok: false, error: kickResult.error });
+        }
+
+        const targetSocketIds = lobbySessionManager.getMemberSocketIds(
+          lobbyId,
+          targetUserId,
+        );
+
+        lobbySessionManager.explicitLeaveLobby(lobbyId, targetUserId);
+
+        for (const targetSocketId of targetSocketIds) {
+          const targetSocket = io.sockets.sockets.get(targetSocketId);
+          if (!targetSocket) continue;
+
+          targetSocket.leave(rooms.lobby(lobbyId));
+          targetSocket.join(rooms.lobby(kickResult.newLobbyId));
+          targetSocket.data.currentLobbyId = kickResult.newLobbyId;
+
+          lobbySessionManager.joinLobby(
+            kickResult.newLobbyId,
+            targetSocket.data.user!,
+            targetSocket.id,
+          );
+        }
+
+        const previousLobbyState = await lobbyService.getLobbyState(lobbyId);
+        const mergedPreviousLobbyState =
+          mergeLobbyStateWithPresence(previousLobbyState);
+        const newLobbyState = await lobbyService.getLobbyState(
+          kickResult.newLobbyId,
+        );
+        const mergedNewLobbyState = mergeLobbyStateWithPresence(newLobbyState);
+        const newLobbyQueueState = lobbyQueueManager.serializeLobbyQueue(
+          kickResult.newLobbyId,
+        );
+
+        io.to(rooms.lobby(lobbyId)).emit(
+          SOCKET_EVENTS.LOBBY_STATE,
+          mergedPreviousLobbyState,
+        );
+        io.to(rooms.lobby(kickResult.newLobbyId)).emit(
+          SOCKET_EVENTS.LOBBY_STATE,
+          mergedNewLobbyState,
+        );
+        io.to(rooms.lobby(kickResult.newLobbyId)).emit(
+          SOCKET_EVENTS.LOBBY_QUEUE_STATE,
+          newLobbyQueueState,
+        );
+
+        for (const targetSocketId of targetSocketIds) {
+          io.to(targetSocketId).emit(SOCKET_EVENTS.LOBBY_KICKED, {
+            previousLobbyId: lobbyId,
+            lobby: mergedNewLobbyState,
+            queueState: newLobbyQueueState,
+          });
+        }
+
+        ack?.({
+          ok: true,
+          previousLobbyId: lobbyId,
+          state: mergedPreviousLobbyState,
+        });
+      } catch {
+        ack?.({ ok: false, error: "Failed to kick player" });
+      }
+    },
+  );
+
   socket.on(SOCKET_EVENTS.LOBBY_QUEUE_START, async ({ lobbyId }, ack) => {
     try {
       if (!lobbyId) {

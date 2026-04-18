@@ -6,6 +6,7 @@ type ActiveLobbyRow = {
 };
 
 type LobbyMemberRow = {
+  owner_user_id: string;
   user_id: string;
   steam_id: string;
   persona_name: string | null;
@@ -93,6 +94,7 @@ export class LobbyService {
     const membersResult = await db.query<LobbyMemberRow>(
       `
       SELECT
+        l.owner_user_id::text AS owner_user_id,
         u.id AS user_id,
         u.steam_id,
         u.persona_name,
@@ -104,9 +106,11 @@ export class LobbyService {
         lm.ready
       FROM lobby_members lm
       INNER JOIN users u ON u.id = lm.user_id
+      INNER JOIN lobbies l ON l.id = lm.lobby_id
       WHERE lm.lobby_id = $1
         AND lm.left_at IS NULL
         AND lm.kicked_at IS NULL
+        AND l.closed_at IS NULL
       ORDER BY lm.joined_at ASC
       `,
       [lobbyId],
@@ -114,6 +118,7 @@ export class LobbyService {
 
     return {
       lobbyId,
+      ownerUserId: membersResult.rows[0]?.owner_user_id ?? null,
       members: membersResult.rows.map((row) => ({
         userId: row.user_id,
         steamId: row.steam_id,
@@ -334,6 +339,116 @@ export class LobbyService {
 
       return {
         previousLobbyId: currentLobbyId,
+        newLobbyId,
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async kickLobbyMemberAndCreateNewLobby(params: {
+    lobbyId: string;
+    actorUserId: string;
+    targetUserId: string;
+  }) {
+    const { lobbyId, actorUserId, targetUserId } = params;
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const lobbyResult = await client.query<{
+        owner_user_id: string;
+        closed_at: Date | null;
+        status: string;
+      }>(
+        `
+        SELECT owner_user_id::text AS owner_user_id, closed_at, status
+        FROM lobbies
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [lobbyId],
+      );
+
+      const lobby = lobbyResult.rows[0];
+
+      if (!lobby || lobby.closed_at || lobby.status === "closed") {
+        await client.query("ROLLBACK");
+        return { ok: false as const, error: "Lobby not found" };
+      }
+
+      if (lobby.owner_user_id !== actorUserId) {
+        await client.query("ROLLBACK");
+        return {
+          ok: false as const,
+          error: "Only the lobby owner can kick players",
+        };
+      }
+
+      if (targetUserId === actorUserId) {
+        await client.query("ROLLBACK");
+        return { ok: false as const, error: "You cannot kick yourself" };
+      }
+
+      const targetMembershipResult = await client.query(
+        `
+        SELECT 1
+        FROM lobby_members
+        WHERE lobby_id = $1
+          AND user_id = $2
+          AND left_at IS NULL
+          AND kicked_at IS NULL
+        LIMIT 1
+        `,
+        [lobbyId, targetUserId],
+      );
+
+      if (!targetMembershipResult.rowCount) {
+        await client.query("ROLLBACK");
+        return { ok: false as const, error: "Player is not in this lobby" };
+      }
+
+      await client.query(
+        `
+        UPDATE lobby_members
+        SET kicked_at = NOW()
+        WHERE lobby_id = $1
+          AND user_id = $2
+          AND left_at IS NULL
+          AND kicked_at IS NULL
+        `,
+        [lobbyId, targetUserId],
+      );
+
+      const newLobbyResult = await client.query<{ id: string }>(
+        `
+        INSERT INTO lobbies (owner_user_id, status, visibility, title)
+        VALUES ($1, 'open', 'private', NULL)
+        RETURNING id
+        `,
+        [targetUserId],
+      );
+
+      const newLobbyId = newLobbyResult.rows[0].id;
+
+      await client.query(
+        `
+        INSERT INTO lobby_members (lobby_id, user_id, member_role, ready)
+        VALUES ($1, $2, 'member', false)
+        `,
+        [newLobbyId, targetUserId],
+      );
+
+      await client.query("COMMIT");
+
+      return {
+        ok: true as const,
+        previousLobbyId: lobbyId,
+        kickedUserId: targetUserId,
         newLobbyId,
       };
     } catch (error) {

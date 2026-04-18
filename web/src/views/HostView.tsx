@@ -1,26 +1,18 @@
 import { useNavigate } from "react-router";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
-import { Link } from "../components/Link";
 import { HostBadge } from "../components/HostBadge";
 import { useAuth } from "../auth/useAuth";
 
-function FeatureCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function RequirementItem({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-primary/15 bg-black/10 p-5">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="text-sm text-foreground-muted">{children}</div>
+    <div className="rounded-2xl border border-primary/15 bg-black/10 px-4 py-3 text-sm text-foreground-muted">
+      {children}
     </div>
   );
 }
 
-function Step({
+function StepItem({
   index,
   title,
   children,
@@ -30,13 +22,13 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-4 rounded-2xl border border-primary/15 bg-black/10 p-5">
-      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+    <div className="flex items-start gap-3 rounded-2xl border border-primary/15 bg-black/10 px-4 py-4">
+      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary">
         {index}
       </div>
-      <div className="flex flex-col gap-2">
-        <h3 className="font-semibold">{title}</h3>
-        <div className="text-sm text-foreground-muted">{children}</div>
+      <div>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="mt-1 text-sm text-foreground-muted">{children}</p>
       </div>
     </div>
   );
@@ -61,151 +53,115 @@ export function HostView() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <Card>
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="flex flex-col gap-5">
+        <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+          <div className="flex flex-col gap-4">
             <div className="inline-flex w-fit rounded-full border border-secondary/20 bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary">
               Community Hosting
             </div>
 
             <div className="flex flex-col gap-3">
               <h1 className="max-w-2xl text-3xl font-bold leading-tight md:text-4xl">
-                Host community servers for FLOW
+                Apply to host a FLOW server
               </h1>
               <p className="max-w-2xl text-sm text-foreground-muted md:text-base">
-                Help power fair, community-driven CS2 matches. Register your
-                server, verify ownership through the FLOW plugin, and earn
-                recognition as a trusted host.
+                Keep it simple: approved hosts get a public badge, can register
+                servers, and can verify ownership through the FLOW plugin.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handlePrimaryCta} variant="solid">
-                {!isSignedIn
-                  ? "Sign in to host"
-                  : user?.hostStatus
-                    ? "Open host dashboard"
-                    : "Apply to host"}
-              </Button>
-              <Button href="/about" variant="ghost">
-                Learn more about FLOW
-              </Button>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-foreground-muted">
+              <span>Approved hosts receive:</span>
+              <HostBadge />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2 text-sm text-foreground-muted">
-              <span>Approved hosts receive a public badge:</span>
-              <HostBadge />
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button onClick={handlePrimaryCta} variant="solid">
+                {!isSignedIn
+                  ? "Sign in to apply"
+                  : user?.hostStatus
+                    ? "Open host dashboard"
+                    : "Apply now"}
+              </Button>
             </div>
           </div>
 
           <div className="rounded-3xl border border-primary/15 bg-black/20 p-5">
-            <div className="flex h-full flex-col justify-between gap-5">
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-                  Host Program
-                </p>
-                <h2 className="text-xl font-semibold">What you get</h2>
-              </div>
-
-              <div className="grid gap-3">
-                <div className="rounded-2xl border border-success/20 bg-success/10 p-4">
-                  <p className="text-sm font-medium text-success">
-                    Verified server status
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-secondary/20 bg-secondary/10 p-4">
-                  <p className="text-sm font-medium text-secondary">
-                    Host badge on your profile
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-info/20 bg-info/10 p-4">
-                  <p className="text-sm font-medium text-info">
-                    Access to server health and registration tools
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-foreground-muted">
-                Hosting is intended for trusted community members who want to
-                support healthy matchmaking infrastructure.
+            <div className="flex h-full flex-col gap-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+                What you get
               </p>
+
+              <div className="rounded-2xl border border-secondary/20 bg-secondary/10 p-4">
+                <p className="text-sm font-medium text-secondary">
+                  Public host badge on your profile
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-success/20 bg-success/10 p-4">
+                <p className="text-sm font-medium text-success">
+                  Verified server registration and ownership tools
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-info/20 bg-info/10 p-4">
+                <p className="text-sm font-medium text-info">
+                  Access to your server dashboard and verification flow
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <FeatureCard title="Recognition">
-          Verified hosts get a visible badge and become part of the public
-          identity of the platform.
-        </FeatureCard>
-
-        <FeatureCard title="Simple onboarding">
-          Start with your server IP and basic details, then verify ownership
-          through the plugin.
-        </FeatureCard>
-
-        <FeatureCard title="Operational control">
-          Manage registered servers, review verification state, and see health
-          issues from one place.
-        </FeatureCard>
-      </div>
-
-      <Card>
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-              How it works
-            </p>
-            <h2 className="text-2xl font-bold">
-              Become a FLOW host in 4 steps
-            </h2>
-          </div>
-
-          <div className="grid gap-4">
-            <Step index={1} title="Submit your server details">
-              Paste your server IP and port, choose a display name, and confirm
-              your contact details.
-            </Step>
-            <Step index={2} title="Verify ownership">
-              Install the FLOW plugin, add your verification token, and let the
-              platform confirm that you control the server.
-            </Step>
-            <Step index={3} title="Pass automatic checks">
-              FLOW validates that the server is reachable and assigns a routing
-              region based on the server location.
-            </Step>
-            <Step index={4} title="Get approved and start hosting">
-              Once approved, your account receives host status and your server
-              appears in your host dashboard.
-            </Step>
           </div>
         </div>
       </Card>
 
       <Card>
         <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold">Requirements</h2>
-          <div className="grid gap-3 text-sm text-foreground-muted md:grid-cols-2">
-            <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-              Reasonable uptime and stable connectivity
-            </div>
-            <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-              Installation of the FLOW server plugin
-            </div>
-            <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-              Willingness to follow platform fairness and abuse-prevention rules
-            </div>
-            <div className="rounded-2xl border border-primary/15 bg-black/10 p-4">
-              Responsiveness if your server needs re-verification or attention
-            </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+              Requirements
+            </p>
+            <h2 className="mt-1 text-2xl font-bold">Before you apply</h2>
           </div>
 
-          <div className="pt-2">
-            <Link to={isSignedIn ? "/servers/apply" : "/host"}>
-              {isSignedIn ? "Apply now" : "Sign in to apply"}
-            </Link>
+          <div className="grid gap-3 md:grid-cols-2">
+            <RequirementItem>
+              Stable server uptime and a reachable public address
+            </RequirementItem>
+            <RequirementItem>
+              Willingness to install the FLOW plugin for verification
+            </RequirementItem>
+            <RequirementItem>
+              A contact method in case the server needs attention
+            </RequirementItem>
+            <RequirementItem>
+              Agreement to follow fairness and abuse-prevention rules
+            </RequirementItem>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+              How it works
+            </p>
+            <h2 className="mt-1 text-2xl font-bold">Three short steps</h2>
+          </div>
+
+          <div className="grid gap-3">
+            <StepItem index={1} title="Confirm the requirements">
+              Read the checklist and confirm that you understand what hosting
+              requires.
+            </StepItem>
+            <StepItem index={2} title="Enter your server info">
+              Add the public address, port, display name, and contact method.
+            </StepItem>
+            <StepItem index={3} title="Verify ownership">
+              Copy your verification token into the FLOW plugin and finish the
+              verification from your dashboard.
+            </StepItem>
           </div>
         </div>
       </Card>
