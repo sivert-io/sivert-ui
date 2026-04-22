@@ -1,13 +1,9 @@
+import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from ".";
 
 interface HoverDropdownProps {
-  trigger: (args: {
-    isOpen: boolean;
-    toggle: () => void;
-    close: () => void;
-    open: () => void;
-  }) => React.ReactNode;
+  trigger: (args: { isOpen: boolean; toggle: () => void }) => React.ReactNode;
   children: React.ReactNode;
   placement?: React.ComponentProps<typeof Dropdown>["placement"];
   hoverable?: boolean;
@@ -25,18 +21,20 @@ export function HoverDropdown({
 }: HoverDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [closeTimeoutId, setCloseTimeoutId] = useState<number | null>(null);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const closeTimeoutRef = useRef<number | null>(null);
 
   function clearCloseTimeout() {
-    if (closeTimeoutRef.current !== null) {
-      window.clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
+    setCloseTimeoutId((current) => {
+      if (current !== null) {
+        window.clearTimeout(current);
+      }
+      return null;
+    });
   }
 
-  function open() {
+  function openDropdown() {
     clearCloseTimeout();
     setIsOpen(true);
   }
@@ -46,9 +44,12 @@ export function HoverDropdown({
 
     if (isPinned) return;
 
-    closeTimeoutRef.current = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       setIsOpen(false);
+      setCloseTimeoutId(null);
     }, closeDelay);
+
+    setCloseTimeoutId(timeoutId);
   }
 
   function toggle() {
@@ -64,7 +65,7 @@ export function HoverDropdown({
     setIsOpen(true);
   }
 
-  function close() {
+  function closeDropdown() {
     clearCloseTimeout();
     setIsPinned(false);
     setIsOpen(false);
@@ -75,7 +76,7 @@ export function HoverDropdown({
       if (!rootRef.current) return;
 
       if (!rootRef.current.contains(event.target as Node)) {
-        close();
+        closeDropdown();
       }
     }
 
@@ -83,21 +84,35 @@ export function HoverDropdown({
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      clearCloseTimeout();
+      if (closeTimeoutId !== null) {
+        window.clearTimeout(closeTimeoutId);
+      }
     };
-  }, []);
+  }, [closeTimeoutId]);
+
+  function handleContentClick(event: React.MouseEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const clickable = target.closest("a, button");
+    if (!clickable) return;
+
+    if (clickable.hasAttribute("data-keep-dropdown-open")) return;
+
+    closeDropdown();
+  }
 
   return (
     <div
       ref={rootRef}
       className={`${className ?? "relative"} z-350 relative`}
-      onMouseEnter={hoverable ? open : undefined}
+      onMouseEnter={hoverable ? openDropdown : undefined}
       onMouseLeave={hoverable ? scheduleClose : undefined}
     >
-      {trigger({ isOpen, toggle, close, open })}
+      {trigger({ isOpen, toggle })}
 
       <Dropdown isOpen={isOpen} placement={placement}>
-        {children}
+        <div onClick={handleContentClick}>{children}</div>
       </Dropdown>
     </div>
   );

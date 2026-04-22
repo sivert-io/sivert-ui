@@ -1,8 +1,11 @@
 import { Link } from "../components/Link";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
+import { useAuth } from "../auth/useAuth";
 
 export function LandingView() {
+  const { signIn } = useAuth();
+
   return (
     <div className="flex min-h-[calc(100vh-9rem)] flex-col items-center justify-center gap-12">
       <div className="flex flex-col items-center gap-4 text-center">
@@ -14,8 +17,13 @@ export function LandingView() {
         </p>
 
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Button href="/host" variant="solid">
-            Host a server
+          <Button
+            onClick={() => {
+              signIn();
+            }}
+            variant="solid"
+          >
+            Start playing
           </Button>
           <Button href="/about" variant="ghost">
             About FLOW

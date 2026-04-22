@@ -70,6 +70,14 @@ type CurrentLobbyResponse = {
   };
 };
 
+type RenderPlayerSlotOptions = {
+  scale?: number;
+  isOurselves?: boolean;
+  width?: number | string;
+  height?: number | string;
+  className?: string;
+};
+
 export function Lobby() {
   const navigate = useNavigate();
 
@@ -255,9 +263,16 @@ export function Lobby() {
 
   function renderPlayerSlot(
     player: (typeof players)[number] | null | undefined,
-    scale = 1,
-    isOurselves?: boolean,
+    options: RenderPlayerSlotOptions = {},
   ) {
+    const {
+      scale = 1,
+      isOurselves = false,
+      width,
+      height,
+      className,
+    } = options;
+
     if (!player) {
       return (
         <PlayerCard
@@ -265,6 +280,9 @@ export function Lobby() {
           onClick={openInviteModal}
           disableInvite={disableQueueActions || isInQueue}
           scale={scale}
+          width={width}
+          height={height}
+          className={className}
         />
       );
     }
@@ -274,6 +292,9 @@ export function Lobby() {
         playerData={player}
         onClick={() => handleViewProfile(player.steamId)}
         scale={scale}
+        width={width}
+        height={height}
+        className={className}
         statusLabel={undefined}
         title={getPresenceTooltip(player)}
       />
@@ -301,12 +322,77 @@ export function Lobby() {
 
   return (
     <div className="relative flex w-full flex-col items-center gap-4">
-      <div className="relative z-20 flex w-full items-center justify-between">
-        {renderPlayerSlot(players[3], 0.7)}
-        {renderPlayerSlot(players[1], 0.85)}
-        {renderPlayerSlot(players[0], 1, true)}
-        {renderPlayerSlot(players[2], 0.85)}
-        {renderPlayerSlot(players[4], 0.7)}
+      {/* Desktop */}
+      <div className="hidden w-full items-center justify-center gap-2 md:flex">
+        {renderPlayerSlot(players[3], {
+          scale: 0.6,
+          width: 160,
+          height: 200,
+        })}
+        {renderPlayerSlot(players[1], {
+          scale: 0.8,
+          width: 160,
+          height: 200,
+        })}
+        {renderPlayerSlot(players[0], {
+          scale: 1,
+          isOurselves: true,
+          width: 160,
+          height: 200,
+        })}
+        {renderPlayerSlot(players[2], {
+          scale: 0.8,
+          width: 160,
+          height: 200,
+        })}
+        {renderPlayerSlot(players[4], {
+          scale: 0.6,
+          width: 160,
+          height: 200,
+        })}
+      </div>
+
+      {/* Mobile */}
+      <div className="flex w-full flex-col items-center gap-3 md:hidden">
+        <div className="w-full">
+          {renderPlayerSlot(players[0], {
+            isOurselves: true,
+            width: "100%",
+            height: 160,
+            className: "w-full",
+          })}
+        </div>
+
+        <div className="grid w-full grid-cols-2 gap-3">
+          <div className="w-full">
+            {renderPlayerSlot(players[1], {
+              width: "100%",
+              height: 160,
+              className: "w-full",
+            })}
+          </div>
+          <div className="w-full">
+            {renderPlayerSlot(players[2], {
+              width: "100%",
+              height: 160,
+              className: "w-full",
+            })}
+          </div>
+          <div className="w-full">
+            {renderPlayerSlot(players[3], {
+              width: "100%",
+              height: 160,
+              className: "w-full",
+            })}
+          </div>
+          <div className="w-full">
+            {renderPlayerSlot(players[4], {
+              width: "100%",
+              height: 160,
+              className: "w-full",
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="relative z-10 flex w-full flex-col items-center gap-4">

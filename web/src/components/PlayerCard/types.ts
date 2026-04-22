@@ -15,4 +15,7 @@ export type PlayerCardProps = {
   statusLabel?: ReactNode;
   scale?: number;
   title?: string;
+  width?: number | string;
+  height?: number | string;
+  className?: string;
 };
