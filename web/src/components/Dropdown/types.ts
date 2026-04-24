@@ -1,9 +1,4 @@
-export interface DropdownProps {
-  children: React.ReactNode;
-  isOpen: boolean;
-  placement?: DropdownPlacement;
-  className?: string;
-}
+import type React from "react";
 
 export type DropdownPlacement =
   | "bottom-left"
@@ -18,3 +13,8 @@ export type DropdownPlacement =
   | "left-top"
   | "left-center"
   | "left-bottom";
+
+export interface DropdownProps {
+  children: React.ReactNode;
+  className?: string;
+}

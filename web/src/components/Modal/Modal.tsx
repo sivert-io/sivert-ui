@@ -155,7 +155,7 @@ export function Modal({
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             className={cn(
-              "relative w-full max-w-lg rounded-2xl border border-primary/30 bg-background p-6 outline-none",
+              "relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-primary/30 bg-background p-6 outline-none",
               panelClassName,
             )}
             initial={{ opacity: 0, y: 8, scale: 0.96 }}

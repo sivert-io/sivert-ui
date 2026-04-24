@@ -127,7 +127,6 @@ function QueueBadge({
       className="inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary transition hover:border-secondary/35 hover:bg-secondary/15"
       title="Open lobby"
     >
-      <span className="inline-block h-2 w-2 rounded-full bg-secondary" />
       <span>Searching</span>
       <span className="tabular-nums text-foreground">
         {elapsedLabel ?? "0:00"}
@@ -258,6 +257,7 @@ export function Navbar() {
       if (notification.id) {
         await deleteNotification(notification.id);
       }
+
       toast("Invite expired");
       return;
     }
@@ -303,11 +303,6 @@ export function Navbar() {
     }
   }
 
-  async function handleSignOut() {
-    navigate("/");
-    await signOut();
-  }
-
   async function handleDeclineInvite(notification: {
     id?: string;
     data?: unknown;
@@ -317,6 +312,7 @@ export function Navbar() {
       if (notification.id) {
         await deleteNotification(notification.id);
       }
+
       toast("Invite expired");
       return;
     }
@@ -356,6 +352,11 @@ export function Navbar() {
     }
   }
 
+  async function handleSignOut() {
+    navigate("/");
+    await signOut();
+  }
+
   return (
     <div className="fixed top-0 right-0 left-0 z-300 grid w-full place-items-center p-3">
       <div
@@ -364,7 +365,7 @@ export function Navbar() {
         }`}
       >
         <nav className="flex items-center justify-between rounded-full border border-primary/20 bg-black/10 p-1.5 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <Button href="/" variant="ghost" size="sm" className="px-3">
               <Logo solid className="h-3.5" />
             </Button>
@@ -395,25 +396,24 @@ export function Navbar() {
             <div className="flex items-center gap-1">
               <HoverDropdown
                 placement="bottom-center"
-                trigger={({ isOpen, toggle }) => (
+                dropdownClassName="w-[min(18rem,calc(100vw-1rem))]"
+                trigger={
                   <Button
                     className="relative h-8! w-8! p-0!"
-                    onClick={toggle}
-                    aria-expanded={isOpen}
-                    aria-haspopup="menu"
                     variant="ghost"
                     size="sm"
                   >
                     <MdNotifications size={18} />
-                    {unreadCount > 0 && !isOpen ? (
+
+                    {unreadCount > 0 ? (
                       <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-secondary px-1 text-[10px] font-bold text-background">
                         {unreadCount}
                       </span>
                     ) : null}
                   </Button>
-                )}
+                }
               >
-                <div className="flex min-w-72 flex-col">
+                <div className="flex min-w-0 flex-col">
                   <div className="flex items-center justify-between px-3 py-2">
                     <span className="text-sm font-semibold text-primary">
                       Notifications
@@ -424,6 +424,7 @@ export function Navbar() {
                         type="button"
                         onClick={clearNotifications}
                         className="text-xs text-foreground-muted transition hover:text-primary"
+                        data-keep-dropdown-open
                       >
                         Clear
                       </button>
@@ -541,14 +542,9 @@ export function Navbar() {
 
               <HoverDropdown
                 placement="bottom-right"
-                trigger={({ isOpen, toggle }) => (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggle}
-                    aria-expanded={isOpen}
-                    aria-haspopup="menu"
-                  >
+                dropdownClassName="w-[min(14rem,calc(100vw-1rem))]"
+                trigger={
+                  <Button variant="ghost" size="sm">
                     <>
                       {user?.avatarSmall ? (
                         <img
@@ -557,12 +553,13 @@ export function Navbar() {
                           className="h-5 w-5 rounded-full"
                         />
                       ) : null}
+
                       <span className="max-w-28 truncate text-xs">
                         {user?.personaName ?? "Account"}
                       </span>
                     </>
                   </Button>
-                )}
+                }
               >
                 <DropdownLink
                   to={user?.steamId ? `/profile/${user.steamId}` : "/profile"}
