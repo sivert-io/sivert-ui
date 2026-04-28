@@ -116,7 +116,7 @@ export function PlayerCard({
             {resolvedStatusLabel ? (
               <p
                 className={cn(
-                  "text-xs font-bold uppercase tracking-wide",
+                  "text-xs font-bold uppercase tracking-wide absolute bottom-0",
                   resolvedStatusLabel === "invited"
                     ? "text-secondary"
                     : "text-primary/60",
