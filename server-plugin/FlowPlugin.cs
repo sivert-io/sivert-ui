@@ -1,0 +1,14 @@
+﻿using CounterStrikeSharp.API.Core;
+namespace FlowServer;
+
+public class FlowPlugin : BasePlugin
+{
+    public override string ModuleName => "Flow Server Plugin";
+
+    public override string ModuleVersion => "0.0.1";
+
+    public override void Load(bool hotReload)
+    {
+        Console.WriteLine("Flow Server Plugin loaded!");
+    }
+}
