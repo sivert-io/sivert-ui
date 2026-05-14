@@ -157,6 +157,27 @@ export async function createServer(input: {
   return readJson<{ server: ServerRecord }>(response);
 }
 
+export async function claimServerRegistrationKey(input: {
+  registrationKey: string;
+  address: string;
+  port?: number;
+  displayName: string;
+  country?: string;
+  region?: string;
+  contact?: string;
+}) {
+  const response = await fetch(`${API_BASE_URL}/hosts/registration-keys/claim`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+
+  return readJson<{ server: ServerRecord }>(response);
+}
+
 export async function updateServer(input: {
   serverId: string;
   address: string;

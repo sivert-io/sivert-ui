@@ -67,7 +67,7 @@ export function HostView() {
               </h1>
               <p className="max-w-2xl text-sm text-foreground-muted md:text-base">
                 Keep it simple: approved hosts get a public badge, can register
-                servers, and can verify ownership through the FLOW plugin.
+                servers, and can claim ownership through the FLOW plugin.
               </p>
             </div>
 
@@ -159,8 +159,8 @@ export function HostView() {
               Add the public address, port, display name, and contact method.
             </StepItem>
             <StepItem index={3} title="Verify ownership">
-              Copy your verification token into the FLOW plugin and finish the
-              verification from your dashboard.
+              Run css_flow_register on your CS2 server, paste the generated key
+              into FLOW, and the server is added to your dashboard.
             </StepItem>
           </div>
         </div>

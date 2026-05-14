@@ -243,6 +243,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_servers_owner_ip_port_active
   ON servers(owner_user_id, ip_address, port)
   WHERE removed_at IS NULL;
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_servers_ip_port_active
+  ON servers(ip_address, port)
+  WHERE removed_at IS NULL;
+
 CREATE TABLE IF NOT EXISTS server_verifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
@@ -286,6 +290,32 @@ CREATE TABLE IF NOT EXISTS server_audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_server_audit_logs_server_id_created_at
   ON server_audit_logs(server_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS server_registration_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  registration_key TEXT NOT NULL UNIQUE,
+  poll_secret_hash TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  plugin_version TEXT,
+  requested_ip TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '15 minutes'),
+  claimed_at TIMESTAMPTZ,
+  claimed_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  server_id UUID REFERENCES servers(id) ON DELETE SET NULL,
+  CONSTRAINT server_registration_keys_status_check
+    CHECK (status IN ('pending', 'claimed', 'expired'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_server_registration_keys_status_expires_at
+  ON server_registration_keys(status, expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_server_registration_keys_claimed_by_user_id
+  ON server_registration_keys(claimed_by_user_id);
+
+ALTER TABLE server_registration_keys
+ADD COLUMN IF NOT EXISTS poll_secret_hash TEXT;
 
 ALTER TABLE servers
 ADD COLUMN IF NOT EXISTS host_input TEXT;

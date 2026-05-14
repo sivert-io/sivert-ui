@@ -18,6 +18,19 @@ const createServerSchema = z.object({
   contact: z.string().trim().max(255).optional(),
 });
 
+const pluginRegistrationKeySchema = z.object({
+  pluginVersion: z.string().trim().max(64).optional(),
+});
+
+const pluginRegistrationStatusSchema = z.object({
+  registrationKey: z.string().trim().min(1).max(64),
+  pollToken: z.string().trim().min(1).max(256),
+});
+
+const claimRegistrationKeySchema = createServerSchema.extend({
+  registrationKey: z.string().trim().min(1).max(64),
+});
+
 const updateServerSchema = z.object({
   address: z.string().trim().min(1).max(255),
   port: z.coerce.number().int().min(1).max(65535).optional(),
@@ -47,6 +60,10 @@ const heartbeatSchema = z.object({
 const discoverSchema = z.object({
   address: z.string().trim().min(1).max(255),
 });
+
+function routeParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
+}
 
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
@@ -90,6 +107,68 @@ router.post("/discover", requireAuth, async (req, res, next) => {
   }
 });
 
+router.get("/plugin/registration-key", async (req, res, next) => {
+  try {
+    const query = pluginRegistrationKeySchema.parse(req.query);
+    const registration = await hostService.createServerRegistrationKey({
+      pluginVersion: query.pluginVersion ?? null,
+      requestedIp: req.ip ?? null,
+      userAgent: req.get("user-agent") ?? null,
+    });
+
+    return res.status(200).json({
+      registrationKey: registration.registrationKey,
+      pollToken: registration.pollToken,
+      expiresAt: registration.expiresAt,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/plugin/registration-key/status", async (req, res, next) => {
+  try {
+    const query = pluginRegistrationStatusSchema.parse(req.query);
+    const result = await hostService.getServerRegistrationStatus({
+      registrationKey: query.registrationKey,
+      pollToken: query.pollToken,
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: "Registration key not found" });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/registration-keys/claim", requireAuth, async (req, res, next) => {
+  try {
+    const body = claimRegistrationKeySchema.parse(req.body);
+
+    const result = await hostService.claimServerRegistrationKey({
+      userId: req.user!.id,
+      registrationKey: body.registrationKey,
+      address: body.address,
+      port: body.port ?? null,
+      displayName: body.displayName,
+      country: body.country ?? null,
+      region: body.region ?? null,
+      contact: body.contact ?? null,
+    });
+
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    return res.status(201).json({ server: result.server });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/me/servers", requireAuth, async (req, res, next) => {
   try {
     const servers = await hostService.getServersForUser(req.user!.id);
@@ -121,7 +200,7 @@ router.post("/servers", requireAuth, async (req, res, next) => {
 
 router.patch("/servers/:serverId", requireAuth, async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const serverId = routeParam(req.params.serverId);
     const body = updateServerSchema.parse(req.body);
 
     const server = await hostService.updateServer({
@@ -147,7 +226,7 @@ router.patch("/servers/:serverId", requireAuth, async (req, res, next) => {
 
 router.delete("/servers/:serverId", requireAuth, async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const serverId = routeParam(req.params.serverId);
 
     const removed = await hostService.removeServer({
       userId: req.user!.id,
@@ -166,7 +245,7 @@ router.delete("/servers/:serverId", requireAuth, async (req, res, next) => {
 
 router.get("/servers/:serverId", requireAuth, async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const serverId = routeParam(req.params.serverId);
     const result = await hostService.getServerForUser(req.user!.id, serverId);
 
     if (!result) {
@@ -184,7 +263,7 @@ router.post(
   requireAuth,
   async (req, res, next) => {
     try {
-      const { serverId } = req.params;
+      const serverId = routeParam(req.params.serverId);
       const body = verifyServerSchema.parse(req.body);
 
       const result = await hostService.verifyServer({
@@ -211,7 +290,7 @@ router.post(
 
 router.post("/servers/:serverId/token", requireAuth, async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const serverId = routeParam(req.params.serverId);
 
     const server = await hostService.rotateServerToken({
       userId: req.user!.id,
@@ -230,7 +309,7 @@ router.post("/servers/:serverId/token", requireAuth, async (req, res, next) => {
 
 router.post("/servers/:serverId/drain", requireAuth, async (req, res, next) => {
   try {
-    const { serverId } = req.params;
+    const serverId = routeParam(req.params.serverId);
     const body = drainModeSchema.parse(req.body);
 
     const server = await hostService.setDrainMode({

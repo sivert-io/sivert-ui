@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import net from "node:net";
 import { db } from "../../db.js";
 import { resolveServerAddress } from "../../lib/server-address.js";
 import { inferServerLocation } from "../../lib/location-inference.js";
@@ -16,6 +17,21 @@ type CreateServerInput = {
   country?: string | null;
   region?: string | null;
   contact?: string | null;
+};
+
+type CreateServerRegistrationKeyInput = {
+  pluginVersion?: string | null;
+  requestedIp?: string | null;
+  userAgent?: string | null;
+};
+
+type ClaimServerRegistrationKeyInput = CreateServerInput & {
+  registrationKey: string;
+};
+
+type GetServerRegistrationStatusInput = {
+  registrationKey: string;
+  pollToken: string;
 };
 
 type UpdateServerInput = {
@@ -64,10 +80,96 @@ function generateVerificationToken() {
   return crypto.randomBytes(18).toString("hex");
 }
 
+function generateRegistrationKey() {
+  const value = crypto.randomBytes(12).toString("hex").toUpperCase();
+  const groups = value.match(/.{1,4}/g) ?? [value];
+  return `FLOW-${groups.join("-")}`;
+}
+
+function generatePollToken() {
+  return crypto.randomBytes(32).toString("base64url");
+}
+
+function hashSecret(value: string) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function normalizeRegistrationKey(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, "");
+}
+
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
   if (!trimmed) return null;
   return trimmed;
+}
+
+function isPgUniqueViolation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23505"
+  );
+}
+
+function normalizeIp(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  return trimmed.startsWith("::ffff:") ? trimmed.slice(7) : trimmed;
+}
+
+function isPublicIpv4(value: string) {
+  const parts = value.split(".").map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part))) {
+    return false;
+  }
+
+  const [first, second] = parts;
+  if (first === undefined || second === undefined) return false;
+
+  if (first === 10) return false;
+  if (first === 127) return false;
+  if (first === 169 && second === 254) return false;
+  if (first === 172 && second >= 16 && second <= 31) return false;
+  if (first === 192 && second === 168) return false;
+  if (first === 0) return false;
+  if (first >= 224) return false;
+
+  return true;
+}
+
+function shouldEnforceRequestedIp(
+  requestedIp: string | null,
+  resolvedIp: string,
+) {
+  if (!requestedIp) return false;
+  return net.isIPv4(requestedIp) && net.isIPv4(resolvedIp) && isPublicIpv4(requestedIp);
+}
+
+function hasPluginPolicyViolation(payload: unknown) {
+  if (!payload || typeof payload !== "object") return true;
+
+  const pluginInventory = (payload as { pluginInventory?: unknown })
+    .pluginInventory;
+  if (!pluginInventory || typeof pluginInventory !== "object") return true;
+
+  const inventory = pluginInventory as {
+    isCompliant?: unknown;
+    disallowedPlugins?: unknown;
+    disallowedPluginCount?: unknown;
+  };
+
+  if (inventory.isCompliant !== true) return true;
+
+  if (Array.isArray(inventory.disallowedPlugins)) {
+    return inventory.disallowedPlugins.length > 0;
+  }
+
+  return (
+    typeof inventory.disallowedPluginCount === "number" &&
+    inventory.disallowedPluginCount > 0
+  );
 }
 
 function mapHostProfile(row: Record<string, unknown> | undefined) {
@@ -108,6 +210,18 @@ function mapServer(row: Record<string, unknown>) {
     removedAt: row.removed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapServerRegistrationKey(row: Record<string, unknown>) {
+  return {
+    id: String(row.id),
+    registrationKey: String(row.registration_key),
+    pluginVersion: row.plugin_version ? String(row.plugin_version) : null,
+    requestedIp: row.requested_ip ? String(row.requested_ip) : null,
+    status: String(row.status),
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
   };
 }
 
@@ -193,6 +307,370 @@ export class HostService {
 
   async discoverServerLocation(address: string) {
     return inferServerLocation(address);
+  }
+
+  async createServerRegistrationKey(input: CreateServerRegistrationKeyInput) {
+    const registrationKey = generateRegistrationKey();
+    const pollToken = generatePollToken();
+
+    const result = await db.query(
+      `
+      INSERT INTO server_registration_keys (
+        registration_key,
+        poll_secret_hash,
+        plugin_version,
+        requested_ip,
+        user_agent
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING
+        id,
+        registration_key,
+        plugin_version,
+        requested_ip,
+        status,
+        created_at,
+        expires_at
+      `,
+      [
+        registrationKey,
+        hashSecret(pollToken),
+        normalizeOptionalText(input.pluginVersion),
+        normalizeIp(input.requestedIp),
+        normalizeOptionalText(input.userAgent),
+      ],
+    );
+
+    return {
+      ...mapServerRegistrationKey(result.rows[0]),
+      pollToken,
+    };
+  }
+
+  async getServerRegistrationStatus(input: GetServerRegistrationStatusInput) {
+    const registrationKey = normalizeRegistrationKey(input.registrationKey);
+    const pollSecretHash = hashSecret(input.pollToken);
+
+    const result = await db.query(
+      `
+      SELECT
+        rk.id,
+        rk.registration_key,
+        rk.status,
+        rk.plugin_version,
+        rk.created_at,
+        rk.expires_at,
+        s.id AS server_id,
+        s.display_name,
+        s.ip_address,
+        s.port,
+        s.verification_token
+      FROM server_registration_keys rk
+      LEFT JOIN servers s
+        ON s.id = rk.server_id
+      WHERE rk.registration_key = $1
+        AND rk.poll_secret_hash = $2
+      LIMIT 1
+      `,
+      [registrationKey, pollSecretHash],
+    );
+
+    const row = result.rows[0];
+    if (!row) {
+      return null;
+    }
+
+    if (
+      String(row.status) === "pending" &&
+      new Date(row.expires_at).getTime() <= Date.now()
+    ) {
+      await db.query(
+        `
+        UPDATE server_registration_keys
+        SET status = 'expired'
+        WHERE id = $1
+          AND status = 'pending'
+        `,
+        [row.id],
+      );
+
+      return {
+        status: "expired" as const,
+        expiresAt: row.expires_at,
+      };
+    }
+
+    if (String(row.status) === "claimed" && row.server_id) {
+      return {
+        status: "claimed" as const,
+        expiresAt: row.expires_at,
+        server: {
+          id: String(row.server_id),
+          displayName: String(row.display_name),
+          ipAddress: String(row.ip_address),
+          port: Number(row.port),
+          token: String(row.verification_token),
+        },
+      };
+    }
+
+    return {
+      status: String(row.status) as "pending" | "expired",
+      expiresAt: row.expires_at,
+    };
+  }
+
+  async claimServerRegistrationKey(input: ClaimServerRegistrationKeyInput) {
+    const registrationKey = normalizeRegistrationKey(input.registrationKey);
+    const resolved = await resolveServerAddress(input.address);
+    const inferred = await inferServerLocation(input.address);
+    const verificationToken = generateVerificationToken();
+
+    const finalPort = input.port ?? resolved.port ?? 27015;
+    const country = normalizeOptionalText(input.country) ?? inferred.country;
+    const region = normalizeOptionalText(input.region) ?? inferred.region;
+    const contact = normalizeOptionalText(input.contact);
+
+    const client = await db.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const registrationKeyResult = await client.query(
+        `
+        SELECT
+          id,
+          registration_key,
+          status,
+          plugin_version,
+          requested_ip,
+          created_at,
+          expires_at
+        FROM server_registration_keys
+        WHERE registration_key = $1
+        LIMIT 1
+        FOR UPDATE
+        `,
+        [registrationKey],
+      );
+
+      const registration = registrationKeyResult.rows[0];
+
+      if (!registration) {
+        await client.query("ROLLBACK");
+        return {
+          ok: false as const,
+          error: "Registration key was not found",
+        };
+      }
+
+      if (String(registration.status) === "claimed") {
+        await client.query("ROLLBACK");
+        return {
+          ok: false as const,
+          error: "Registration key has already been claimed",
+        };
+      }
+
+      if (
+        String(registration.status) === "expired" ||
+        new Date(registration.expires_at).getTime() <= Date.now()
+      ) {
+        await client.query(
+          `
+          UPDATE server_registration_keys
+          SET status = 'expired'
+          WHERE id = $1
+            AND status = 'pending'
+          `,
+          [registration.id],
+        );
+
+        await client.query("COMMIT");
+        return {
+          ok: false as const,
+          error: "Registration key has expired",
+        };
+      }
+
+      const requestedIp = normalizeIp(
+        registration.requested_ip ? String(registration.requested_ip) : null,
+      );
+
+      if (
+        shouldEnforceRequestedIp(requestedIp, resolved.resolvedIp) &&
+        requestedIp !== normalizeIp(resolved.resolvedIp)
+      ) {
+        await client.query("ROLLBACK");
+        return {
+          ok: false as const,
+          error:
+            "Registration key was generated from a different public IP than this server address",
+        };
+      }
+
+      await client.query(
+        `
+        INSERT INTO host_profiles (user_id, status)
+        VALUES ($1, 'pending')
+        ON CONFLICT (user_id)
+        DO NOTHING
+        `,
+        [input.userId],
+      );
+
+      const serverResult = await client.query(
+        `
+        INSERT INTO servers (
+          owner_user_id,
+          host_input,
+          display_name,
+          ip_address,
+          port,
+          country,
+          region,
+          contact,
+          status,
+          verification_status,
+          verification_token,
+          plugin_version,
+          approved_at,
+          metadata
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'verified', 'passed', $9, $10, NOW(), $11::jsonb)
+        RETURNING
+          id,
+          owner_user_id,
+          host_input,
+          display_name,
+          ip_address,
+          port,
+          country,
+          region,
+          contact,
+          status,
+          verification_status,
+          verification_token,
+          plugin_version,
+          last_heartbeat_at,
+          last_seen_at,
+          approved_at,
+          drained_at,
+          removed_at,
+          created_at,
+          updated_at
+        `,
+        [
+          input.userId,
+          resolved.hostInput,
+          input.displayName,
+          resolved.resolvedIp,
+          finalPort,
+          country,
+          region,
+          contact,
+          verificationToken,
+          registration.plugin_version ?? null,
+          JSON.stringify({
+            resolution: {
+              originalInput: resolved.originalInput,
+              resolvedIp: resolved.resolvedIp,
+            },
+            registrationKey: {
+              id: registration.id,
+              requestedIp: registration.requested_ip ?? null,
+              createdAt: registration.created_at,
+            },
+          }),
+        ],
+      );
+
+      const server = serverResult.rows[0];
+
+      await client.query(
+        `
+        UPDATE server_registration_keys
+        SET
+          status = 'claimed',
+          claimed_at = NOW(),
+          claimed_by_user_id = $2,
+          server_id = $3
+        WHERE id = $1
+        `,
+        [registration.id, input.userId, server.id],
+      );
+
+      await client.query(
+        `
+        INSERT INTO server_verifications (
+          server_id,
+          verification_token,
+          status,
+          completed_at
+        )
+        VALUES ($1, $2, 'passed', NOW())
+        `,
+        [server.id, verificationToken],
+      );
+
+      await client.query(
+        `
+        INSERT INTO server_audit_logs (
+          server_id,
+          actor_user_id,
+          action,
+          details
+        )
+        VALUES (
+          $1,
+          $2,
+          'server_registered_with_plugin_key',
+          jsonb_build_object(
+            'displayName', to_jsonb($3::text),
+            'hostInput', to_jsonb($4::text),
+            'ipAddress', to_jsonb($5::text),
+            'port', to_jsonb($6::int),
+            'country', to_jsonb($7::text),
+            'region', to_jsonb($8::text),
+            'registrationKeyId', to_jsonb($9::text),
+            'pluginVersion', to_jsonb($10::text)
+          )
+        )
+        `,
+        [
+          server.id,
+          input.userId,
+          input.displayName,
+          resolved.hostInput,
+          resolved.resolvedIp,
+          finalPort,
+          country,
+          region,
+          String(registration.id),
+          registration.plugin_version ? String(registration.plugin_version) : null,
+        ],
+      );
+
+      await client.query("COMMIT");
+
+      return {
+        ok: true as const,
+        server: mapServer(server),
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+
+      if (isPgUniqueViolation(error)) {
+        return {
+          ok: false as const,
+          error: "A server with this address and port is already registered",
+        };
+      }
+
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async getServersForUser(userId: string) {
@@ -1033,6 +1511,8 @@ export class HostService {
         };
       }
 
+      const pluginPolicyViolation = hasPluginPolicyViolation(input.payload);
+
       await client.query(
         `
         INSERT INTO server_heartbeats (
@@ -1060,13 +1540,18 @@ export class HostService {
           last_seen_at = NOW(),
           updated_at = NOW(),
           status = CASE
+            WHEN $3 = true THEN 'needs_attention'
             WHEN status = 'draining' THEN status
             WHEN verification_status = 'passed' THEN 'verified'
             ELSE status
           END
         WHERE id = $1
         `,
-        [input.serverId, input.pluginVersion ?? null],
+        [
+          input.serverId,
+          input.pluginVersion ?? null,
+          pluginPolicyViolation,
+        ],
       );
 
       const updatedServerResult = await client.query(

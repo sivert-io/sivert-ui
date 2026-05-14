@@ -3,8 +3,8 @@ import { Card } from "../components/Card";
 import { InputField } from "../components/InputField/InputField";
 import { Button } from "../components/Button";
 import {
+  claimServerRegistrationKey,
   createHostApplication,
-  createServer,
   discoverServerLocation,
 } from "../lib/hosts";
 import { toast } from "sonner";
@@ -103,6 +103,7 @@ export function ServerApplyView() {
   const [port, setPort] = useState("27015");
   const [serverName, setServerName] = useState("");
   const [contact, setContact] = useState("");
+  const [registrationKey, setRegistrationKey] = useState("");
   const [notes, setNotes] = useState("");
   const [createdServerId, setCreatedServerId] = useState<string | null>(null);
   const [createdToken, setCreatedToken] = useState<string | null>(null);
@@ -120,6 +121,10 @@ export function ServerApplyView() {
     () => sanitizeAddressInput(address),
     [address],
   );
+  const normalizedRegistrationKey = useMemo(
+    () => registrationKey.trim().toUpperCase(),
+    [registrationKey],
+  );
 
   const canContinueFromChecklist =
     understandsBadge && understandsPlugin && understandsRules;
@@ -127,11 +132,12 @@ export function ServerApplyView() {
   const canCreateServer = useMemo(() => {
     return (
       sanitizedAddress.length > 0 &&
+      normalizedRegistrationKey.length > 0 &&
       port.trim().length > 0 &&
       serverName.trim().length > 0 &&
       contact.trim().length > 0
     );
-  }, [sanitizedAddress, port, serverName, contact]);
+  }, [sanitizedAddress, normalizedRegistrationKey, port, serverName, contact]);
 
   useEffect(() => {
     if (!sanitizedAddress) {
@@ -174,7 +180,8 @@ export function ServerApplyView() {
         notes: notes.trim() || undefined,
       });
 
-      const created = await createServer({
+      const created = await claimServerRegistrationKey({
+        registrationKey: normalizedRegistrationKey,
         address: sanitizedAddress,
         port: Number(port),
         displayName: serverName.trim(),
@@ -247,10 +254,10 @@ export function ServerApplyView() {
                 <ChecklistItem
                   checked={understandsPlugin}
                   onToggle={() => setUnderstandsPlugin((value) => !value)}
-                  title="I understand plugin verification is required"
+                  title="I understand plugin registration is required"
                 >
-                  You must install the FLOW plugin and add a verification token
-                  to prove server ownership.
+                  You must install the FLOW plugin, run css_flow_register, and
+                  paste the generated key into this form.
                 </ChecklistItem>
 
                 <ChecklistItem
@@ -282,9 +289,16 @@ export function ServerApplyView() {
                 </p>
                 <h1 className="text-2xl font-bold">Server info</h1>
                 <p className="text-sm text-foreground-muted">
-                  Add the public address and basic contact info. Keep it short.
+                  Add the plugin key, public address, and basic contact info.
                 </p>
               </div>
+
+              <InputField
+                label="Plugin registration key *"
+                placeholder="FLOW-0000-0000-0000-0000-0000-0000"
+                value={registrationKey}
+                onChange={(e) => setRegistrationKey(e.target.value)}
+              />
 
               <div className="grid gap-4 md:grid-cols-2">
                 <InputField
@@ -385,30 +399,29 @@ export function ServerApplyView() {
                 </p>
                 <h1 className="text-2xl font-bold">Verify ownership</h1>
                 <p className="text-sm text-foreground-muted">
-                  Add this token to the FLOW plugin on your server, then verify
-                  from the server page.
+                  Your plugin key has been claimed and this server is now on
+                  your dashboard.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-secondary/20 bg-secondary/10 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-secondary/80">
-                  Verification token
+                  Server token
                 </p>
                 <p className="mt-2 break-all font-mono text-sm">
-                  {createdToken ?? "No token created"}
+                  {createdToken ?? "No server token created"}
                 </p>
               </div>
 
               <div className="grid gap-3">
                 <div className="rounded-2xl border border-primary/15 bg-black/10 p-4 text-sm">
-                  1. Install the FLOW server plugin
+                  1. Server registration key accepted
                 </div>
                 <div className="rounded-2xl border border-primary/15 bg-black/10 p-4 text-sm">
-                  2. Paste in your verification token
+                  2. Server added to your account
                 </div>
                 <div className="rounded-2xl border border-primary/15 bg-black/10 p-4 text-sm">
-                  3. Restart or reload the server, then verify it in the
-                  dashboard
+                  3. Open the dashboard to manage status and future heartbeats
                 </div>
               </div>
 

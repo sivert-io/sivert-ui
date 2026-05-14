@@ -293,15 +293,15 @@ export function ServerDetailsView() {
 
       <Card>
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">Verification token</h2>
+          <h2 className="text-xl font-bold">Server token</h2>
           <div className="rounded-2xl border border-secondary/20 bg-secondary/10 p-4">
             <p className="break-all font-mono text-sm">
               {server.verificationToken ?? "Unavailable"}
             </p>
           </div>
           <p className="text-sm text-foreground-muted">
-            Add this token to your FLOW server plugin config before running
-            verification or heartbeats.
+            This token is reserved for plugin heartbeats and server-side
+            actions after registration.
           </p>
         </div>
       </Card>

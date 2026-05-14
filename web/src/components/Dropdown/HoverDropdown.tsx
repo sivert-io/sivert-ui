@@ -15,7 +15,14 @@ import { Dropdown } from "./Dropdown";
 import type { DropdownPlacement } from "./types";
 
 interface HoverDropdownProps {
-  trigger: React.ReactNode;
+  trigger:
+    | React.ReactNode
+    | ((props: {
+        isOpen: boolean;
+        open: () => void;
+        close: () => void;
+        toggle: () => void;
+      }) => React.ReactNode);
   children: React.ReactNode;
   placement?: DropdownPlacement;
   hoverable?: boolean;
@@ -188,6 +195,16 @@ export function HoverDropdown({
     toggle();
   }
 
+  const triggerContent =
+    typeof trigger === "function"
+      ? trigger({
+          isOpen,
+          open: openDropdown,
+          close: closeDropdown,
+          toggle,
+        })
+      : trigger;
+
   return (
     <div
       ref={rootRef}
@@ -202,7 +219,7 @@ export function HoverDropdown({
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        {trigger}
+        {triggerContent}
       </div>
 
       <AnimatePresence>
