@@ -22,6 +22,7 @@ import { ProfileView } from "./views/ProfileView";
 import { SettingsView } from "./views/SettingsView";
 import { PrivacyPolicyView } from "./views/PrivacyPolicyView";
 import { NotFoundView } from "./views/NotFoundView";
+import { ShopView } from "./views/ShopView";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -114,6 +115,14 @@ function AnimatedRoutes() {
           element={
             <PageTransition>
               <SettingsView />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/shop"
+          element={
+            <PageTransition>
+              <ShopView />
             </PageTransition>
           }
         />

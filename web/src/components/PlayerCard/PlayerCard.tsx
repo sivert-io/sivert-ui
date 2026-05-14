@@ -4,6 +4,7 @@ import { MdAdd } from "react-icons/md";
 import { Button } from "../Button";
 import { Rank } from "../Rank";
 import type { PlayerCardProps } from "./types";
+import { springTransition } from "../../lib/transitions";
 
 const BASE_WIDTH = 144;
 const BASE_HEIGHT = 192;
@@ -43,7 +44,7 @@ export function PlayerCard({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            transition={springTransition}
           >
             <Button
               disabled={disableInvite}
@@ -58,7 +59,7 @@ export function PlayerCard({
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 16 }}
-                    transition={{ duration: 0.15 }}
+                    transition={springTransition}
                     className="grid place-items-center rounded-full bg-primary/20 p-3 text-primary"
                   >
                     <MdAdd size={24} />
@@ -84,7 +85,7 @@ export function PlayerCard({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            transition={springTransition}
           >
             <div className="flex flex-col items-center gap-2">
               <div className="flex flex-col items-center">

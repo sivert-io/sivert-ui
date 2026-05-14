@@ -11,6 +11,7 @@ import { Spinner } from "../Spinner";
 import { Button } from "../Button";
 import { API_BASE_URL } from "../../lib/api";
 import { Tooltip } from "../Tooltip";
+import { springTransition } from "../../lib/transitions";
 
 function formatOfflineDuration(disconnectedAt?: number | null) {
   if (!disconnectedAt) return "Offline";
@@ -403,7 +404,7 @@ export function Lobby() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+              transition={springTransition}
               className="absolute flex flex-col items-center gap-3"
             >
               <Spinner size={64} easing="snappy" duration={2} mode="fill" />
@@ -420,6 +421,7 @@ export function Lobby() {
           className="relative flex flex-col items-center justify-end gap-2"
           initial={{ height: 36 }}
           animate={{ height: isInQueue ? 170 : 36 }}
+          transition={springTransition}
         >
           <div className="relative">
             <Button

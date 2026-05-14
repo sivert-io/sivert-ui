@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
-import { HostBadge } from "../components/HostBadge";
-import { Skeleton } from "../components/Skeleton";
 import { Modal } from "../components/Modal";
 import { InputField } from "../components/InputField/InputField";
 import { useAuth } from "../auth/useAuth";
@@ -44,20 +42,6 @@ function sanitizeAddressInput(value: string) {
     .trim();
 }
 
-function prettyHostStatus(
-  status: HostMeResponse["profile"] extends infer P
-    ? P extends { status: infer S }
-      ? S | null
-      : null
-    : null,
-) {
-  if (status === "verified") return "Approved";
-  if (status === "pending") return "Waiting for review";
-  if (status === "rejected") return "Needs changes";
-  if (status === "suspended") return "Suspended";
-  return "Not applied";
-}
-
 function prettyServerStatus(server: ServerRecord) {
   if (server.status === "verified") return "Verified";
   if (server.status === "pending_verification") return "In progress";
@@ -85,27 +69,6 @@ function StatusChip({ server }: { server: ServerRecord }) {
       className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${statusChipClasses(server.status)}`}
     >
       {prettyServerStatus(server)}
-    </span>
-  );
-}
-
-function HostStatusChip({
-  status,
-}: {
-  status: "pending" | "verified" | "rejected" | "suspended" | null;
-}) {
-  const classes =
-    status === "verified"
-      ? "border-success/20 bg-success/10 text-success"
-      : status === "pending"
-        ? "border-secondary/20 bg-secondary/10 text-secondary"
-        : "border-danger/20 bg-danger/10 text-danger";
-
-  return (
-    <span
-      className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${classes}`}
-    >
-      {prettyHostStatus(status)}
     </span>
   );
 }
@@ -153,20 +116,6 @@ function EmptyState({
         </div>
       </div>
     </Card>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div className="flex flex-col gap-4">
-      <Skeleton className="h-40 rounded-3xl" />
-      <div className="grid gap-4 md:grid-cols-3">
-        <Skeleton className="h-28 rounded-3xl" />
-        <Skeleton className="h-28 rounded-3xl" />
-        <Skeleton className="h-28 rounded-3xl" />
-      </div>
-      <Skeleton className="h-72 rounded-3xl" />
-    </div>
   );
 }
 
@@ -343,7 +292,7 @@ function ServerGrid({
   if (servers.length === 0) {
     return (
       <div className="rounded-2xl border border-primary/15 bg-black/10 p-5 text-sm text-foreground-muted">
-        No submitted servers yet.
+        No servers yet.
       </div>
     );
   }
@@ -403,102 +352,14 @@ function ServerGrid({
 }
 
 function Dashboard({
-  me,
   servers,
-  onApply,
-  isApplying,
   onManage,
 }: {
-  me: HostMeResponse;
   servers: ServerRecord[];
-  onApply: () => void;
-  isApplying: boolean;
   onManage: (server: ServerRecord) => void;
 }) {
-  const hostStatus = me.profile?.status ?? null;
-
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold">Your server applications</h1>
-              <HostStatusChip status={hostStatus} />
-              {me.profile?.badgeVariant ? (
-                <HostBadge variant={me.profile.badgeVariant} />
-              ) : null}
-            </div>
-
-            <p className="max-w-2xl text-sm text-foreground-muted">
-              See every submitted server, track status, and open a server to
-              update or remove it.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button href="/servers/apply">Add server</Button>
-            {hostStatus !== "verified" ? (
-              <Button variant="ghost" onClick={onApply} disabled={isApplying}>
-                {isApplying ? "Submitting..." : "Refresh application"}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </Card>
-
-      {hostStatus === "pending" ? (
-        <Card>
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-secondary/80">
-              Waiting for review
-            </p>
-            <p className="text-sm text-foreground-muted">
-              Your host profile is pending. You can still add, edit, and verify
-              servers while you wait.
-            </p>
-          </div>
-        </Card>
-      ) : null}
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-              Submitted
-            </p>
-            <p className="text-3xl font-bold">{me.summary.totalServers}</p>
-            <p className="text-sm text-foreground-muted">
-              Servers on your account
-            </p>
-          </div>
-        </Card>
-        <Card>
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-              Verified
-            </p>
-            <p className="text-3xl font-bold">{me.summary.verifiedServers}</p>
-            <p className="text-sm text-foreground-muted">
-              Ready for production
-            </p>
-          </div>
-        </Card>
-        <Card>
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
-              Needs attention
-            </p>
-            <p className="text-3xl font-bold">
-              {me.summary.actionNeededServers}
-            </p>
-            <p className="text-sm text-foreground-muted">
-              Verification or health issue
-            </p>
-          </div>
-        </Card>
-      </div>
-
       <Card>
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
@@ -508,9 +369,7 @@ function Dashboard({
                 Click a card to update or delete it.
               </p>
             </div>
-            <Button href="/servers/apply" size="sm" variant="ghost">
-              Register another
-            </Button>
+            <Button href="/servers/apply">Add server</Button>
           </div>
 
           <ServerGrid servers={servers} onManage={onManage} />
@@ -524,15 +383,12 @@ export function ServersView() {
   const { user, refreshAuth } = useAuth();
   const [me, setMe] = useState<HostMeResponse | null>(null);
   const [servers, setServers] = useState<ServerRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const [managedServer, setManagedServer] = useState<ServerRecord | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
   async function load() {
     try {
-      setIsLoading(true);
-
       const [meResult, serversResult] = await Promise.all([
         getHostMe(),
         getMyServers(),
@@ -543,8 +399,6 @@ export function ServersView() {
     } catch (error) {
       console.error(error);
       toast(error instanceof Error ? error.message : "Failed to load hosts");
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -595,35 +449,13 @@ export function ServersView() {
     return me?.profile?.status ?? user?.hostStatus ?? null;
   }, [me, user?.hostStatus]);
 
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
   if (!effectiveStatus && servers.length === 0) {
     return <EmptyState isApplying={isApplying} onApply={handleApply} />;
   }
 
   return (
     <>
-      <Dashboard
-        me={
-          me ?? {
-            profile: null,
-            summary: {
-              totalServers: servers.length,
-              verifiedServers: servers.filter((s) => s.status === "verified")
-                .length,
-              actionNeededServers: servers.filter(
-                (s) => s.status === "needs_attention",
-              ).length,
-            },
-          }
-        }
-        servers={servers}
-        onApply={handleApply}
-        isApplying={isApplying}
-        onManage={handleOpenManage}
-      />
+      <Dashboard servers={servers} onManage={handleOpenManage} />
 
       <ServerManageModal
         open={isManageModalOpen}

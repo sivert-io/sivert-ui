@@ -15,11 +15,13 @@ import { Divider } from "../Divider/Divider";
 import { HoverDropdown } from "../Dropdown";
 import { Logo } from "../Logo";
 import { Link } from "../Link";
-import { FaSteam } from "react-icons/fa";
+import { FaCoins, FaSteam } from "react-icons/fa";
 import { useNotifications } from "../../notifications/useNotifications";
 import { useLobby } from "../../hooks/useLobby";
 import { API_BASE_URL } from "../../lib/api";
 import { toast } from "sonner";
+import { motion } from "motion/react";
+import { springTransition } from "../../lib/transitions";
 
 function DropdownLink({
   to,
@@ -359,13 +361,13 @@ export function Navbar() {
 
   return (
     <div className="fixed top-0 right-0 left-0 z-300 grid w-full place-items-center p-3">
-      <div
-        className={`relative w-full transition-all duration-100 ${
-          isInQueue ? "max-w-2xl" : "max-w-xl"
-        }`}
+      <motion.div
+        className={`relative w-full`}
+        animate={{ maxWidth: isInQueue ? 672 : 576 }}
+        transition={springTransition}
       >
         <nav className="flex items-center justify-between rounded-full border border-primary/20 bg-black/10 p-1.5 backdrop-blur-sm">
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
             <Button href="/" variant="ghost" size="sm" className="px-3">
               <Logo solid className="h-3.5" />
             </Button>
@@ -394,8 +396,16 @@ export function Navbar() {
             </Button>
           ) : (
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/shop")}
+              >
+                <FaCoins /> 0
+              </Button>
+
               <HoverDropdown
-                placement="bottom-center"
+                placement="bottom-right"
                 dropdownClassName="w-[min(18rem,calc(100vw-1rem))]"
                 trigger={
                   <Button
@@ -544,7 +554,7 @@ export function Navbar() {
                 placement="bottom-right"
                 dropdownClassName="w-[min(14rem,calc(100vw-1rem))]"
                 trigger={
-                  <Button variant="ghost" size="sm">
+                  <Button square variant="ghost" size="sm">
                     <>
                       {user?.avatarSmall ? (
                         <img
@@ -554,9 +564,9 @@ export function Navbar() {
                         />
                       ) : null}
 
-                      <span className="max-w-28 truncate text-xs">
+                      {/* <span className="max-w-28 truncate text-xs">
                         {user?.personaName ?? "Account"}
-                      </span>
+                      </span> */}
                     </>
                   </Button>
                 }
@@ -599,7 +609,7 @@ export function Navbar() {
             </div>
           )}
         </nav>
-      </div>
+      </motion.div>
     </div>
   );
 }

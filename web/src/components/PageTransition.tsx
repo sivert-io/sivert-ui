@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { motion } from "motion/react";
+import { springTransition } from "../lib/transitions";
 
 export function PageTransition({ children }: PropsWithChildren) {
   return (
@@ -9,10 +10,7 @@ export function PageTransition({ children }: PropsWithChildren) {
         opacity: 1,
         y: 0,
         filter: "blur(0px)",
-        transition: {
-          duration: 0.08,
-          ease: "easeOut",
-        },
+        transition: springTransition,
       }}
       exit={{
         opacity: 0,

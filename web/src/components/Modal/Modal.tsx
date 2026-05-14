@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+import { springTransition } from "../../lib/transitions";
 
 export interface ModalProps {
   children: ReactNode;
@@ -139,8 +140,12 @@ export function Modal({
           )}
           initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
-          exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          exit={{
+            opacity: 0,
+            backdropFilter: "blur(0px)",
+            transition: { duration: 0.2, ease: "easeOut" },
+          }}
+          transition={springTransition}
           onClick={() => {
             if (closeOnBackdrop) close();
           }}
@@ -160,8 +165,13 @@ export function Modal({
             )}
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            exit={{
+              opacity: 0,
+              y: 8,
+              scale: 0.96,
+              transition: { duration: 0.2, ease: "easeOut" },
+            }}
+            transition={springTransition}
           >
             {children}
           </motion.div>

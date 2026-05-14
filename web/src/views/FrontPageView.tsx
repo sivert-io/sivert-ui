@@ -5,6 +5,7 @@ import { Lobby } from "../components/Lobby/Lobby";
 import { useAuth } from "../auth/useAuth";
 import { LandingView } from "./LandingView";
 import { motion } from "motion/react";
+import { springTransition } from "../lib/transitions";
 
 const POST_LOGIN_PATH_KEY = "flow.post_login_path";
 
@@ -15,7 +16,7 @@ function AuthLoader() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.2 }}
+        transition={springTransition}
         className="text-sm text-primary/70"
       />
     </div>

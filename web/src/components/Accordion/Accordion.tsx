@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { AccordionProps } from "./types";
 import { MdArrowDropDown } from "react-icons/md";
+import { springTransition } from "../../lib/transitions";
 
 export function Accordion({ children, label }: AccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +11,7 @@ export function Accordion({ children, label }: AccordionProps) {
     <motion.div
       initial={{ height: "32px" }}
       animate={{ height: isOpen ? "auto" : "32px" }}
+      transition={springTransition}
       className="flex flex-col gap-2 rounded-xl border border-primary/20 bg-black/20 relative"
     >
       <button
@@ -28,7 +30,7 @@ export function Accordion({ children, label }: AccordionProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            transition={springTransition}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4">{children}</div>
@@ -39,6 +41,7 @@ export function Accordion({ children, label }: AccordionProps) {
       <motion.div
         initial={{ rotate: 0 }}
         animate={{ rotate: isOpen ? 180 : 0 }}
+        transition={springTransition}
         className="pointer-events-none absolute top-0 left-0 grid place-items-center w-8 h-8"
       >
         <MdArrowDropDown size={32} />

@@ -10,6 +10,7 @@ import {
   type Placement,
 } from "@floating-ui/react";
 import type { TooltipPlacement, TooltipProps } from "./types";
+import { springTransition } from "../../lib/transitions";
 
 function toFloatingPlacement(placement: TooltipPlacement): Placement {
   switch (placement) {
@@ -142,8 +143,11 @@ export function Tooltip({
               role="tooltip"
               initial={initial}
               animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-              exit={initial}
-              transition={{ duration: 0.1, ease: "easeOut" }}
+              exit={{
+                ...initial,
+                transition: { duration: 0.2, ease: "easeOut" },
+              }}
+              transition={springTransition}
               className={cn(
                 "pointer-events-none w-max max-w-[min(20rem,calc(100vw-1rem))] rounded-lg border border-primary/20 bg-background px-3 py-2 text-sm shadow-xl",
                 contentClassName,

@@ -1,6 +1,7 @@
 import cn from "classnames";
 import { motion } from "motion/react";
 import type { DropdownPlacement, DropdownProps } from "./types";
+import { springTransition } from "../../lib/transitions";
 
 function getMotionOffset(placement: DropdownPlacement) {
   if (placement.startsWith("top")) {
@@ -34,8 +35,8 @@ export function Dropdown({
       role="menu"
       initial={initial}
       animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-      exit={initial}
-      transition={{ duration: 0.16, ease: "easeOut" }}
+      exit={{ ...initial, transition: { duration: 0.2, ease: "easeOut" } }}
+      transition={springTransition}
       className={cn(
         "rounded-2xl border border-primary/20 bg-background p-2 shadow-xl",
         className,
