@@ -1,14 +1,16 @@
-using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Timers;
 using FlowServer.Api;
 using FlowServer.Commands;
+using FlowServer.Events;
 using FlowServer.Heartbeats;
 using FlowServer.Inventory;
 using FlowServer.Logging;
+using FlowServer.Paints;
 using FlowServer.Presentation;
 using FlowServer.Registration;
 using FlowServer.State;
-using FlowServer.Events;
 
 namespace FlowServer;
 
@@ -19,11 +21,16 @@ public class FlowPlugin : BasePlugin
     private FlowApiClient? _apiClient;
     private FlowServerStateStore? _stateStore;
     private CancellationTokenSource? _lifetimeCts;
-    private PlayerConnectionListener? _playerConnectionListener;
 
+    private PlayerConnectionListener? _playerConnectionListener;
     private HeartbeatService? _heartbeatService;
     private RegistrationService? _registrationService;
     private CommandHandler? _commandHandler;
+
+    private PaintApiClient? _paintApiClient;
+    private PaintLoadoutStore? _paintLoadoutStore;
+    private PaintApplicationService? _paintApplicationService;
+    private PaintEventListener? _paintEventListener;
 
     public override string ModuleName => "Flow Server Plugin";
     public override string ModuleVersion => "0.0.1";
@@ -39,11 +46,6 @@ public class FlowPlugin : BasePlugin
         _apiClient = new FlowApiClient(apiBaseUrl, ModuleVersion);
         _stateStore = FlowServerStateStore.FromModulePath(ModulePath);
         _stateStore.Load();
-
-        _playerConnectionListener = new PlayerConnectionListener();
-
-        RegisterEventHandler<EventPlayerConnectFull>(
-            _playerConnectionListener.OnPlayerConnectFull);
 
         _heartbeatService = new HeartbeatService(
             _apiClient,
@@ -73,6 +75,39 @@ public class FlowPlugin : BasePlugin
             () => ModulePath);
 
         RegisterCommands(_commandHandler.Commands);
+
+        _playerConnectionListener = new PlayerConnectionListener();
+
+        RegisterEventHandler<EventPlayerConnectFull>(
+            _playerConnectionListener.OnPlayerConnectFull);
+
+        _paintApiClient = new PaintApiClient();
+        _paintLoadoutStore = new PaintLoadoutStore();
+
+        _paintApplicationService = new PaintApplicationService(
+            _paintLoadoutStore);
+
+        _paintEventListener = new PaintEventListener(
+            _paintApiClient,
+            _paintLoadoutStore,
+            _paintApplicationService,
+            GetLifetimeToken);
+
+        VirtualFunctions.GiveNamedItemFunc.Hook(
+_paintEventListener.OnGiveNamedItemPost,
+HookMode.Post);
+
+        RegisterEventHandler<EventPlayerConnectFull>(
+            _paintEventListener.OnPlayerConnectFull);
+
+        RegisterEventHandler<EventPlayerDisconnect>(
+            _paintEventListener.OnPlayerDisconnect);
+
+        RegisterEventHandler<EventPlayerSpawn>(
+            _paintEventListener.OnPlayerSpawn);
+
+        RegisterListener<Listeners.OnEntityCreated>(
+            _paintEventListener.OnEntityCreated);
 
         AddTimer(
             60.0f,
@@ -119,6 +154,19 @@ public class FlowPlugin : BasePlugin
         _registrationService = null;
         _commandHandler = null;
         _playerConnectionListener = null;
+
+        _paintApiClient = null;
+        _paintLoadoutStore = null;
+        _paintApplicationService = null;
+
+        if (_paintEventListener is not null)
+        {
+            VirtualFunctions.GiveNamedItemFunc.Unhook(
+                _paintEventListener.OnGiveNamedItemPost,
+                HookMode.Post);
+        }
+
+        _paintEventListener = null;
     }
 
     private void RegisterCommands(IReadOnlyList<FlowCommandDefinition> commands)
