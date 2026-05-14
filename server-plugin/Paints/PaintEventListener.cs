@@ -36,9 +36,12 @@ public sealed class PaintEventListener
             return HookResult.Continue;
         }
 
-        _playersBySlot[player.Slot] = player;
+        if (player != null)
+        {
+            _playersBySlot[player.Slot] = player;
+            _ = LoadPaintsForPlayerAsync(player);
+        }
 
-        _ = LoadPaintsForPlayerAsync(player);
 
         return HookResult.Continue;
     }
@@ -65,11 +68,17 @@ public sealed class PaintEventListener
             return HookResult.Continue;
         }
 
-        _playersBySlot[player.Slot] = player;
+        if (player != null)
+        {
+            _playersBySlot[player.Slot] = player;
+        }
 
         Server.NextFrame(() =>
         {
-            _paintApplicationService.ApplyFullLoadout(player);
+            if (player != null)
+            {
+                _paintApplicationService.ApplyFullLoadout(player);
+            }
         });
 
         return HookResult.Continue;

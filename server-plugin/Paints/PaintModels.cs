@@ -6,11 +6,25 @@ public sealed class PlayerPaintLoadout
 
     public Dictionary<int, WeaponPaint> WeaponsByDefIndex { get; set; } = new();
 
-    public KnifePaint? Knife { get; set; }
+    public SideKnifePaint? Knives { get; set; }
 
-    public GlovePaint? Gloves { get; set; }
+    public SideGlovePaint? Gloves { get; set; }
 
     public AgentPaint? Agents { get; set; }
+}
+
+public sealed class SideKnifePaint
+{
+    public KnifePaint? Terrorist { get; set; }
+
+    public KnifePaint? CounterTerrorist { get; set; }
+}
+
+public sealed class SideGlovePaint
+{
+    public GlovePaint? Terrorist { get; set; }
+
+    public GlovePaint? CounterTerrorist { get; set; }
 }
 
 public sealed class WeaponPaint
@@ -39,6 +53,8 @@ public sealed class KnifePaint
     public float Wear { get; set; }
 
     public string NameTag { get; set; } = "";
+
+    public bool LegacyModel { get; set; }
 }
 
 public sealed class GlovePaint
@@ -57,4 +73,13 @@ public sealed class AgentPaint
     public string TerroristModel { get; set; } = "";
 
     public string CounterTerroristModel { get; set; } = "";
+
+    public AgentModelPathType PathType { get; set; } = AgentModelPathType.Agent;
+}
+
+public enum AgentModelPathType
+{
+    Agent,
+    Character,
+    Full
 }

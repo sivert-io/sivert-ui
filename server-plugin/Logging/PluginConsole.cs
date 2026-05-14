@@ -75,4 +75,26 @@ public static class PluginConsole
 
         System.Console.ForegroundColor = originalColor;
     }
+
+    public static void Logo()
+    {
+        var originalColor = System.Console.ForegroundColor;
+
+        System.Console.ForegroundColor = FlowColor;
+
+        System.Console.WriteLine("""
+
+
+███████╗██╗      ██████╗ ██╗    ██╗
+██╔════╝██║     ██╔═══██╗██║    ██║
+█████╗  ██║     ██║   ██║██║ █╗ ██║
+██╔══╝  ██║     ██║   ██║██║███╗██║
+██║     ███████╗╚██████╔╝╚███╔███╔╝
+╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝
+
+
+""");
+
+        System.Console.ForegroundColor = originalColor;
+    }
 }

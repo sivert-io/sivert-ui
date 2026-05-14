@@ -101,7 +101,14 @@ public sealed class PaintApplicationService
             return;
         }
 
-        if (!_loadoutStore.TryGet(player, out var loadout) || loadout.Gloves is null)
+        if (!_loadoutStore.TryGet(player, out var loadout))
+        {
+            return;
+        }
+
+        var gloves = GetGlovesForPlayerSide(player, loadout);
+
+        if (gloves is null)
         {
             return;
         }
@@ -115,7 +122,6 @@ public sealed class PaintApplicationService
 
         try
         {
-            var gloves = loadout.Gloves;
             var item = pawn.EconGloves;
 
             item.ItemDefinitionIndex = (ushort)gloves.DefinitionIndex;
@@ -129,7 +135,6 @@ public sealed class PaintApplicationService
 
             ApplyPaintAttributes(item, gloves.PaintKit, gloves.Seed, gloves.Wear);
 
-            // These force a visual refresh for gloves.
             player.ExecuteClientCommand("lastinv");
             pawn.AcceptInput("SetBodygroup", value: "first_or_third_person,0");
 
@@ -177,7 +182,12 @@ public sealed class PaintApplicationService
 
         try
         {
-            var normalizedModel = NormalizeAgentModelPath(model);
+            var normalizedModel = NormalizeAgentModelPath(loadout.Agents, model);
+
+            if (string.IsNullOrWhiteSpace(normalizedModel))
+            {
+                return;
+            }
 
             Server.NextFrame(() =>
             {
@@ -219,12 +229,13 @@ public sealed class PaintApplicationService
         CBasePlayerWeapon weapon,
         PlayerPaintLoadout loadout)
     {
-        if (loadout.Knife is null)
+        var knife = GetKnifeForPlayerSide(player, loadout);
+
+        if (knife is null)
         {
             return;
         }
 
-        var knife = loadout.Knife;
         var item = weapon.AttributeManager.Item;
 
         if (item.ItemDefinitionIndex != knife.DefinitionIndex)
@@ -239,7 +250,8 @@ public sealed class PaintApplicationService
             PaintKit = knife.PaintKit,
             Seed = knife.Seed,
             Wear = knife.Wear,
-            NameTag = knife.NameTag
+            NameTag = knife.NameTag,
+            LegacyModel = knife.LegacyModel
         };
 
         ApplyWeaponPaint(player, weapon, paint, entityQuality: 3);
@@ -269,11 +281,6 @@ public sealed class PaintApplicationService
         ApplyPaintAttributes(item, paint.PaintKit, paint.Seed, paint.Wear);
 
         UpdateWeaponMeshGroupMask(weapon, paint.LegacyModel);
-    }
-
-    private static void UpdateWeaponMeshGroupMask(CBasePlayerWeapon weapon, bool legacyModel)
-    {
-        weapon.AcceptInput("SetBodygroup", value: $"body,{(legacyModel ? 1 : 0)}");
     }
 
     private static void ApplyPaintAttributes(
@@ -338,20 +345,64 @@ public sealed class PaintApplicationService
         item.ItemIDHigh = (uint)(itemId >> 32);
     }
 
+    private static KnifePaint? GetKnifeForPlayerSide(
+        CCSPlayerController player,
+        PlayerPaintLoadout loadout)
+    {
+        if (loadout.Knives is null)
+        {
+            return null;
+        }
+
+        return player.TeamNum == 3
+            ? loadout.Knives.CounterTerrorist
+            : loadout.Knives.Terrorist;
+    }
+
+    private static GlovePaint? GetGlovesForPlayerSide(
+        CCSPlayerController player,
+        PlayerPaintLoadout loadout)
+    {
+        if (loadout.Gloves is null)
+        {
+            return null;
+        }
+
+        return player.TeamNum == 3
+            ? loadout.Gloves.CounterTerrorist
+            : loadout.Gloves.Terrorist;
+    }
+
+    private static void UpdateWeaponMeshGroupMask(CBasePlayerWeapon weapon, bool legacyModel)
+    {
+        weapon.AcceptInput("SetBodygroup", value: $"body,{(legacyModel ? 1 : 0)}");
+    }
+
     private static bool IsKnife(CBasePlayerWeapon weapon)
     {
         return weapon.DesignerName.Contains("knife", StringComparison.OrdinalIgnoreCase) ||
                weapon.DesignerName.Contains("bayonet", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string NormalizeAgentModelPath(string model)
+    private static string NormalizeAgentModelPath(AgentPaint agents, string model)
     {
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            return "";
+        }
+
         if (model.EndsWith(".vmdl", StringComparison.OrdinalIgnoreCase))
         {
             return model;
         }
 
-        return $"{model}.vmdl";
+        return agents.PathType switch
+        {
+            AgentModelPathType.Agent => $"agents/models/{model}.vmdl",
+            AgentModelPathType.Character => $"characters/models/{model}.vmdl",
+            AgentModelPathType.Full => $"{model}.vmdl",
+            _ => $"agents/models/{model}.vmdl"
+        };
     }
 
     private static bool IsValidHumanPlayer(CCSPlayerController? player)
