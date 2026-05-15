@@ -75,4 +75,14 @@ public sealed class FlowServerStateStore
         State.PendingRegistration = null;
         Save();
     }
+
+    public void Reset()
+    {
+        State = new ServerState();
+
+        if (File.Exists(StateFilePath))
+        {
+            File.Delete(StateFilePath);
+        }
+    }
 }

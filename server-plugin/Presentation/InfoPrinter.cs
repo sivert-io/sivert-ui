@@ -82,7 +82,7 @@ public sealed class InfoPrinter
         }
         else
         {
-            PluginConsole.Info("Registration: not registered");
+            PluginConsole.Error("Registration: not registered");
         }
 
         PrintAvailableCommands(commands);

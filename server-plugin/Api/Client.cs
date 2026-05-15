@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FlowServer.Inventory;
@@ -121,6 +122,12 @@ public sealed class FlowApiClient : IDisposable
             cancellationToken);
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new FlowServerNotFoundException(
+                $"FLOW API says this server no longer exists: {responseBody}");
+        }
 
         if (!response.IsSuccessStatusCode)
         {

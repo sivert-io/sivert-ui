@@ -18,7 +18,7 @@ namespace FlowServer;
 
 public class FlowPlugin : BasePlugin
 {
-    private const string DefaultApiBaseUrl = "http://192.168.10.144:4000";
+    private const string DefaultApiBaseUrl = "http://192.168.50.181:4000";
     private const float StartupInfoDelaySeconds = 2.0f;
 
     private FlowApiClient? _apiClient;

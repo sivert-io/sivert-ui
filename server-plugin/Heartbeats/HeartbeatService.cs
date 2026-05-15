@@ -42,6 +42,21 @@ public sealed class HeartbeatService
         catch (OperationCanceledException)
         {
         }
+        catch (FlowServerNotFoundException error)
+        {
+            PluginConsole.Error("Server no longer exists in FLOW API.");
+            PluginConsole.Info("Deleting local server identity. Run css_flow_register to register again.");
+            PluginConsole.Info(error.Message);
+
+            try
+            {
+                _stateStore.Reset();
+            }
+            catch (Exception resetError)
+            {
+                PluginConsole.Error($"Failed to delete local server identity: {resetError.Message}");
+            }
+        }
         catch (Exception error)
         {
             PluginConsole.Error($"Heartbeat failed: {error.Message}");
