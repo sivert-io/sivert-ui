@@ -86,15 +86,15 @@ Make sure the server folder contains the plugin DLL and any required dependency 
 3. Connect to the Linux server.
 4. Navigate to the FLOW plugin folder:
 
-```text
-/home/cs2servermanager/server-1/game/csgo/addons/counterstrikesharp/plugins/FlowServer/
-```
+   ```text
+   /home/cs2servermanager/server-1/game/csgo/addons/counterstrikesharp/plugins/FlowServer/
+   ```
 
 5. Sync the build output from:
 
-```text
-server-plugin/bin/Debug/net8.0/
-```
+   ```text
+   server-plugin/bin/Debug/net8.0/
+   ```
 
 6. Restart or reload the CS2 server.
 
@@ -123,9 +123,9 @@ Run these from the server console or RCON.
 1. Start the CS2 server with the plugin installed.
 2. Run:
 
-```text
-css_flow_register
-```
+   ```text
+   css_flow_register
+   ```
 
 3. Copy the generated registration key.
 4. Paste it into the FLOW web app.
