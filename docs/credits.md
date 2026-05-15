@@ -205,33 +205,62 @@ If someone can provide excellent servers, they should be able to earn a lot of c
 
 Credits can be spent on FLOW platform items and features.
 
-| Item                        |           Cost |
-| --------------------------- | -------------: |
-| Common profile badge        |            250 |
-| Common weapon skin          |            500 |
-| Uncommon weapon skin        |            900 |
-| Rare weapon skin            |          1,500 |
-| Epic weapon skin            |          2,500 |
-| Custom knife skin           |          5,000 |
-| MVP effect                  |          1,500 |
-| Nameplate style             |          1,000 |
-| Player model                |          3,000 |
-| Seasonal cosmetic           |          2,000 |
-| Starter skin pack           |            750 |
-| Standard skin pack          |          1,500 |
-| Premium skin pack           |          3,000 |
-| Knife skin pack             |          5,500 |
-| Create clan                 |          2,500 |
-| Rename clan                 |          1,000 |
-| Change clan tag             |            750 |
-| Upload/change clan logo     |            500 |
-| Clan battle challenge       |            100 |
-| Small open tournament entry |   250 per team |
-| Clan cup entry              |   500 per clan |
-| Weekend tournament entry    | 1,000 per team |
-| Seasonal tournament entry   | 2,500 per team |
+| Item                        |                      Cost |
+| --------------------------- | ------------------------: |
+| Common profile badge        |                       250 |
+| Common weapon skin          |                       500 |
+| Uncommon weapon skin        |                       900 |
+| Rare weapon skin            |                     1,500 |
+| Epic weapon skin            |                     2,500 |
+| Custom knife skin           |                     5,000 |
+| MVP effect                  |                     1,500 |
+| Nameplate style             |                     1,000 |
+| Player model                |                     3,000 |
+| Seasonal cosmetic           |                     2,000 |
+| Starter skin pack           |                       750 |
+| Standard skin pack          |                     1,500 |
+| Premium skin pack           |                     3,000 |
+| Knife skin pack             |                     5,500 |
+| Create clan                 |                     2,500 |
+| Rename clan                 |                     1,000 |
+| Change clan tag             |                       750 |
+| Upload/change clan logo     |                       500 |
+| Clan badge                  |   1,500 from clan balance |
+| Clan nameplate style        |   2,500 from clan balance |
+| Clan profile theme          |   2,000 from clan balance |
+| Low-stake clan battle       | 100 locked from each clan |
+| Standard clan battle        | 250 locked from each clan |
+| High-stake clan battle      | 500 locked from each clan |
+| Small open tournament entry |              250 per team |
+| Clan cup entry              |              500 per clan |
+| Weekend tournament entry    |            1,000 per team |
+| Seasonal tournament entry   |            2,500 per team |
 
 The main credit sinks should probably be cosmetics, skin packs, clans, and tournaments.
+
+## Clan balances
+
+Clans have their own public credit balance.
+
+Members can transfer personal credits into the clan bank. Once credits are transferred, they belong to the clan.
+
+Clan battle rewards go to the clan balance, not directly to the players who played the match.
+
+Only the clan owner can transfer credits out of the clan bank or spend clan credits on restricted clan actions.
+
+All clan balance changes should be logged.
+
+Possible clan balance sources:
+
+| Source                 | Result                                                    |
+| ---------------------- | --------------------------------------------------------- |
+| Member donation        | Adds credits to clan balance                              |
+| Clan battle win        | Adds locked battle stake to clan balance                  |
+| Tournament prize       | Adds prize to clan balance, depending on tournament rules |
+| Admin grant            | Adds credits manually                                     |
+| Clan battle loss       | Removes locked stake                                      |
+| Clan cosmetic purchase | Removes credits                                           |
+| Clan tournament entry  | Removes credits                                           |
 
 ## What credits should not be
 

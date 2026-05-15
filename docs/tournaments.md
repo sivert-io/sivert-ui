@@ -47,6 +47,7 @@ Some tournaments may be free, especially for testing or community events.
 Tournament prizes can include:
 
 - Credits split across the team
+- Credits sent to a clan balance
 - Expensive cosmetics
 - Exclusive badges
 - Seasonal trophies
@@ -56,12 +57,12 @@ Tournament prizes can include:
 
 Example prize pool:
 
-| Placement     | Prize                                                |
-| ------------- | ---------------------------------------------------- |
-| 1st place     | 5,000 credits split across team + exclusive cosmetic |
-| 2nd place     | 2,500 credits split across team                      |
-| 3rd place     | 1,000 credits split across team                      |
-| Participation | Small badge or 100 credits                           |
+| Placement     | Prize                              |
+| ------------- | ---------------------------------- |
+| 1st place     | 5,000 credits + exclusive cosmetic |
+| 2nd place     | 2,500 credits                      |
+| 3rd place     | 1,000 credits                      |
+| Participation | Small badge or 100 credits         |
 
 ## Team types
 
@@ -80,24 +81,35 @@ Open tournaments can allow ad-hoc teams.
 
 ## Prize splitting
 
-Credit prizes can be split across the players who participated.
+Tournament prizes can go to players, clans, or both.
 
-Example:
+For open tournaments, credit prizes are usually split across the participating players.
 
-A team wins 5,000 credits in a 5v5 tournament.
+For clan tournaments, credit prizes should usually go to the clan balance.
+
+Example open team prize:
+
+A team wins 5,000 credits in a 5v5 open tournament.
 
 Each player receives 1,000 credits.
 
-For clan tournaments, some or all of the prize could also go to the clan bank.
+Example clan tournament prize:
 
-Possible split:
+A clan wins 5,000 credits in a clan tournament.
 
-| Prize type            | Split                         |
-| --------------------- | ----------------------------- |
-| Open team prize       | Split across players          |
-| Clan tournament prize | 70% players / 30% clan bank   |
-| Clan-only cosmetic    | Sent to clan                  |
-| Individual cosmetic   | Sent to participating players |
+The 5,000 credits are added to the clan balance.
+
+The clan owner can later decide whether to save the credits, spend them on clan features, enter more events, or manually reward members.
+
+Possible split rules:
+
+| Prize type            | Split                                 |
+| --------------------- | ------------------------------------- |
+| Open team prize       | Split across players                  |
+| Clan tournament prize | Sent to clan balance                  |
+| Clan-only cosmetic    | Sent to clan                          |
+| Individual cosmetic   | Sent to participating players         |
+| Mixed prize           | Credits to clan, cosmetics to players |
 
 ## Tournament cosmetics
 
@@ -138,12 +150,13 @@ No-shows waste time and server resources.
 
 Suggested penalties:
 
-| Action                   |                Penalty |
-| ------------------------ | ---------------------: |
-| Team no-show             | -300 from team or clan |
-| Repeated no-show         | Tournament restriction |
-| Abandon tournament match | -500 from team or clan |
-| Fake tournament entry    |         Tournament ban |
+| Action                   |                          Penalty |
+| ------------------------ | -------------------------------: |
+| Team no-show             |                   Lose entry fee |
+| Clan no-show             | Lose entry fee from clan balance |
+| Repeated no-show         |           Tournament restriction |
+| Abandon tournament match |           -500 from team or clan |
+| Fake tournament entry    |                   Tournament ban |
 
 ## Server selection
 
