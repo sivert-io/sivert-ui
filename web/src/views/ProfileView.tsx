@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { useSocket } from "../socket/useSocket";
 import { FaSteam } from "react-icons/fa";
 import { HostBadge } from "../components/HostBadge";
+import { exampleCosmetics } from "../components/CosmeticCard/example";
+import { CosmeticCard } from "../components/CosmeticCard";
 
 type FriendRequestState =
   | "idle"
@@ -522,6 +524,23 @@ export function ProfileView() {
 
       <Card>
         <h1 className="text-lg font-bold">Match History</h1>
+      </Card>
+
+      <Card>
+        <div className="flex flex-col gap-3">
+          <h1 className="text-lg font-bold">FLOW Inventory</h1>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {[...exampleCosmetics]
+              .sort((a, b) => b.rarity - a.rarity)
+              .map((cosmetic) => (
+                <CosmeticCard
+                  key={cosmetic.id}
+                  {...cosmetic}
+                  onClick={() => console.log("Clicked cosmetic:", cosmetic.id)}
+                />
+              ))}
+          </div>
+        </div>
       </Card>
     </div>
   );

@@ -1,0 +1,113 @@
+import type { CosmeticCardProps } from "./types";
+import { CosmeticRarity } from "./types";
+
+export const exampleCosmetics: CosmeticCardProps[] = [
+  {
+    id: "cosmetic-001",
+    name: "Default FLOW Badge",
+    imageUrl: "/cosmetics/examples/default-flow-badge.png",
+    price: 250,
+    rarity: CosmeticRarity.Consumer,
+    type: "badge",
+  },
+  {
+    id: "cosmetic-002",
+    name: "Harbor Grey Glock-18",
+    imageUrl: "/cosmetics/examples/harbor-grey-glock.png",
+    price: 500,
+    rarity: CosmeticRarity.Industrial,
+    type: "weaponSkin",
+  },
+  {
+    id: "cosmetic-003",
+    name: "Nordic Blue AK-47",
+    imageUrl: "/cosmetics/examples/nordic-blue-ak47.png",
+    price: 900,
+    rarity: CosmeticRarity.MilSpec,
+    type: "weaponSkin",
+  },
+  {
+    id: "cosmetic-004",
+    name: "Purple Line M4A1-S",
+    imageUrl: "/cosmetics/examples/purple-line-m4a1s.png",
+    price: 1_500,
+    rarity: CosmeticRarity.Restricted,
+    type: "weaponSkin",
+  },
+  {
+    id: "cosmetic-005",
+    name: "FLOW Classified AWP",
+    imageUrl: "/cosmetics/examples/flow-classified-awp.png",
+    price: 2_500,
+    rarity: CosmeticRarity.Classified,
+    type: "weaponSkin",
+  },
+  {
+    id: "cosmetic-006",
+    name: "Redline Phantom Knife",
+    imageUrl: "/cosmetics/examples/redline-phantom-knife.png",
+    price: 5_000,
+    rarity: CosmeticRarity.Covert,
+    type: "knifeSkin",
+  },
+  {
+    id: "cosmetic-007",
+    name: "Golden Founder Coin",
+    imageUrl: "/cosmetics/examples/golden-founder-coin.png",
+    price: 10_000,
+    rarity: CosmeticRarity.Contraband,
+    type: "badge",
+  },
+  {
+    id: "cosmetic-008",
+    name: "Tournament Champion Gloves",
+    imageUrl: "/cosmetics/examples/tournament-champion-gloves.png",
+    price: 7_500,
+    rarity: CosmeticRarity.Extraordinary,
+    type: "gloves",
+  },
+  {
+    id: "cosmetic-009",
+    name: "FLOW Starter Pack",
+    imageUrl: "/cosmetics/examples/flow-starter-pack.png",
+    price: 750,
+    rarity: CosmeticRarity.MilSpec,
+    type: "skinPack",
+  },
+  {
+    id: "cosmetic-010",
+    name: "Frost Agent",
+    imageUrl: "/cosmetics/examples/frost-agent.png",
+    price: 3_000,
+    rarity: CosmeticRarity.Classified,
+    type: "agent",
+  },
+  {
+    id: "cosmetic-011",
+    name: "Ace MVP Burst",
+    imageUrl: "/cosmetics/examples/ace-mvp-burst.png",
+    price: 1_500,
+    rarity: CosmeticRarity.Restricted,
+    type: "mvpEffect",
+  },
+  {
+    id: "cosmetic-012",
+    name: "Clean Nameplate",
+    imageUrl: "/cosmetics/examples/clean-nameplate.png",
+    price: 1_000,
+    rarity: CosmeticRarity.MilSpec,
+    type: "nameplate",
+  },
+  {
+    id: "cosmetic-013",
+    name: "Dark Profile Theme",
+    imageUrl: "/cosmetics/examples/dark-profile-theme.png",
+    price: 2_000,
+    rarity: CosmeticRarity.Classified,
+    type: "profileTheme",
+  },
+];
+
+export const exampleCosmeticsSortedByRarity = [...exampleCosmetics].sort(
+  (a, b) => b.rarity - a.rarity,
+);
