@@ -427,7 +427,7 @@ export function ProfileView() {
               <h1 className="text-2xl font-bold">
                 {profile.personaName ?? "Unnamed player"}
               </h1>
-              <Rank rank={profile.rank} />
+              <Rank rank={23116} />
               {shouldShowHostBadge ? (
                 <HostBadge
                   variant={profile.hostBadgeVariant ?? "verified"}
