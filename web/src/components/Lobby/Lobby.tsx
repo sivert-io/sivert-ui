@@ -9,6 +9,7 @@ import { InviteModal } from "./InviteModal";
 import { Button } from "../Button";
 import { API_BASE_URL } from "../../lib/api";
 import { Tooltip } from "../Tooltip";
+import { Card } from "../Card";
 
 function formatOfflineDuration(disconnectedAt?: number | null) {
   if (!disconnectedAt) return "Offline";
@@ -334,112 +335,114 @@ export function Lobby() {
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-4 relative">
-      {/* Desktop */}
-      <div className="hidden w-full items-center justify-center gap-2 md:flex">
-        {renderPlayerSlot(players[3], {
-          scale: 0.6,
-          width: 160,
-          height: 200,
-        })}
+    <Card className={isInQueue ? "border-secondary" : ""}>
+      <div className="flex w-full flex-col items-center gap-4 relative">
+        {/* Desktop */}
+        <div className="hidden w-full items-center justify-center gap-2 md:flex">
+          {renderPlayerSlot(players[3], {
+            scale: 0.6,
+            width: 160,
+            height: 200,
+          })}
 
-        {renderPlayerSlot(players[1], {
-          scale: 0.8,
-          width: 160,
-          height: 200,
-        })}
+          {renderPlayerSlot(players[1], {
+            scale: 0.8,
+            width: 160,
+            height: 200,
+          })}
 
-        {renderPlayerSlot(players[0], {
-          scale: 1,
-          isOurselves: true,
-          width: 160,
-          height: 200,
-        })}
-
-        {renderPlayerSlot(players[2], {
-          scale: 0.8,
-          width: 160,
-          height: 200,
-        })}
-
-        {renderPlayerSlot(players[4], {
-          scale: 0.6,
-          width: 160,
-          height: 200,
-        })}
-      </div>
-
-      {/* Mobile */}
-      <div className="flex w-full flex-col items-center gap-3 md:hidden">
-        <div className="w-full">
           {renderPlayerSlot(players[0], {
+            scale: 1,
             isOurselves: true,
-            width: "100%",
-            height: 160,
-            className: "w-full",
+            width: 160,
+            height: 200,
+          })}
+
+          {renderPlayerSlot(players[2], {
+            scale: 0.8,
+            width: 160,
+            height: 200,
+          })}
+
+          {renderPlayerSlot(players[4], {
+            scale: 0.6,
+            width: 160,
+            height: 200,
           })}
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-3">
+        {/* Mobile */}
+        <div className="flex w-full flex-col items-center gap-3 md:hidden">
           <div className="w-full">
-            {renderPlayerSlot(players[1], {
+            {renderPlayerSlot(players[0], {
+              isOurselves: true,
               width: "100%",
               height: 160,
               className: "w-full",
             })}
           </div>
 
-          <div className="w-full">
-            {renderPlayerSlot(players[2], {
-              width: "100%",
-              height: 160,
-              className: "w-full",
-            })}
-          </div>
+          <div className="grid w-full grid-cols-2 gap-3">
+            <div className="w-full">
+              {renderPlayerSlot(players[1], {
+                width: "100%",
+                height: 160,
+                className: "w-full",
+              })}
+            </div>
 
-          <div className="w-full">
-            {renderPlayerSlot(players[3], {
-              width: "100%",
-              height: 160,
-              className: "w-full",
-            })}
-          </div>
+            <div className="w-full">
+              {renderPlayerSlot(players[2], {
+                width: "100%",
+                height: 160,
+                className: "w-full",
+              })}
+            </div>
 
-          <div className="w-full">
-            {renderPlayerSlot(players[4], {
-              width: "100%",
-              height: 160,
-              className: "w-full",
-            })}
+            <div className="w-full">
+              {renderPlayerSlot(players[3], {
+                width: "100%",
+                height: 160,
+                className: "w-full",
+              })}
+            </div>
+
+            <div className="w-full">
+              {renderPlayerSlot(players[4], {
+                width: "100%",
+                height: 160,
+                className: "w-full",
+              })}
+            </div>
           </div>
         </div>
+
+        <Button
+          onClick={handleToggleQueue}
+          variant={isInQueue ? "outline" : "solid"}
+          color={isInQueue ? "danger" : "secondary"}
+          disabled={disableMatchmaking}
+        >
+          {isInQueue ? "Stop searching" : "Find match"}
+        </Button>
+
+        <div className="absolute bottom-0 right-0 md:-top-2 md:-right-2">
+          <Tooltip content="Leave lobby" placement="left-center">
+            <Button
+              onClick={handleLeaveLobby}
+              square
+              size="sm"
+              variant="ghost"
+              color="danger"
+              disabled={disableLeaveLobby}
+            >
+              <MdOutlineDoorBack />
+            </Button>
+          </Tooltip>
+        </div>
+
+        <InviteModal open={showInviteModal} setOpen={setShowInviteModal} />
       </div>
-
-      <Button
-        onClick={handleToggleQueue}
-        variant={isInQueue ? "outline" : "solid"}
-        color={isInQueue ? "danger" : "primary"}
-        disabled={disableMatchmaking}
-      >
-        {isInQueue ? "Stop searching" : "Find match"}
-      </Button>
-
-      <div className="absolute bottom-0 right-0 md:-top-2 md:-right-2">
-        <Tooltip content="Leave lobby" placement="left-center">
-          <Button
-            onClick={handleLeaveLobby}
-            square
-            size="sm"
-            variant="ghost"
-            color="danger"
-            disabled={disableLeaveLobby}
-          >
-            <MdOutlineDoorBack />
-          </Button>
-        </Tooltip>
-      </div>
-
-      <InviteModal open={showInviteModal} setOpen={setShowInviteModal} />
-    </div>
+    </Card>
   );
 }
