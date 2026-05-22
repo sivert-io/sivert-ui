@@ -3,6 +3,7 @@ import { lobbyService } from "../../modules/lobbies/lobby.service.js";
 import { rooms } from "../rooms.js";
 import { SOCKET_EVENTS } from "../events.js";
 import { matchFoundManager } from "../match-found-manager.js";
+import { pushService } from "../../modules/push/push.service.js";
 
 export function registerMatchHandlers(io: Server, socket: Socket) {
   const user = socket.data.user;
@@ -39,6 +40,23 @@ export function registerMatchHandlers(io: Server, socket: Socket) {
       const payload = matchFoundManager.serialize(state);
 
       io.to(rooms.lobby(lobbyId)).emit(SOCKET_EVENTS.MATCH_FOUND, payload);
+
+      await Promise.allSettled(
+        state.players.map((player) =>
+          pushService.sendToUser(player.userId, {
+            kind: "match_found",
+            title: "Match found",
+            body: "Open FLOW to accept the match.",
+            url: "/",
+            tag: `flow-match-found-${state.matchId}`,
+            data: {
+              matchId: state.matchId,
+              lobbyId: state.lobbyId,
+            },
+          }),
+        ),
+      );
+
       ack?.({ ok: true, state: payload });
     } catch {
       ack?.({ ok: false, error: "Failed to create match found state" });

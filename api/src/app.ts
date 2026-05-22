@@ -9,6 +9,7 @@ import notificationRoutes from "./modules/notifications/notification.routes.js";
 import lobbyRoutes from "./modules/lobbies/lobby.routes.js";
 import friendRoutes from "./modules/friends/friend.routes.js";
 import hostRoutes from "./modules/hosts/host.routes.js";
+import pushRoutes from "./modules/push/push.routes.js";
 
 export const app = express();
 
@@ -57,6 +58,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/lobbies", lobbyRoutes);
 app.use("/friends", friendRoutes);
 app.use("/hosts", hostRoutes);
+app.use("/push", pushRoutes);
 
 app.use(
   (

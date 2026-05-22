@@ -5,6 +5,7 @@ import { getIo } from "../../realtime/io.js";
 import { rooms } from "../../realtime/rooms.js";
 import { lobbyService } from "../lobbies/lobby.service.js";
 import { lobbySessionManager } from "../lobbies/lobby-session-manager.js";
+import { pushService } from "../push/push.service.js";
 
 function mergeLobbyStateWithPresence(
   lobbyState: Awaited<ReturnType<typeof lobbyService.getLobbyState>>,
@@ -531,13 +532,31 @@ router.post("/", requireAuth, async (req, res, next) => {
 
     const notification = notificationResult.rows[0];
 
-    getIo().to(rooms.user(invitedUser.id)).emit("notification:new", {
+    const notificationPayload = {
       id: notification.id,
       type: notification.type,
       title: notification.title,
       body: notification.body,
       data: notification.data,
       createdAt: notification.created_at,
+    };
+
+    getIo()
+      .to(rooms.user(invitedUser.id))
+      .emit("notification:new", notificationPayload);
+
+    await pushService.sendLobbyInviteIfAllowed(invitedUser.id, {
+      kind: "lobby_invite",
+      title: notification.title,
+      body: notification.body ?? undefined,
+      url: "/",
+      tag: `flow-lobby-invite-${inviteId}`,
+      data: {
+        inviteId,
+        lobbyId,
+        fromUserId: req.user!.id,
+        fromSteamId: req.user!.steamId,
+      },
     });
 
     return res.status(200).json({ ok: true, lobbyId, inviteId, expiresAt });

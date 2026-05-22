@@ -12,6 +12,7 @@ import { useAuth } from "../auth/useAuth";
 import { MatchFoundContext } from "./MatchFoundContext";
 import type { MatchFoundState } from "./types";
 import { MatchFoundModal } from "../matchmaking/MatchFoundModal";
+import { usePushNotifications } from "../push";
 
 type Props = {
   children: ReactNode;
@@ -23,6 +24,8 @@ export function MatchFoundProvider({ children }: Props) {
   const [rawMatchFound, setRawMatchFound] = useState<MatchFoundState>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const wasOpenRef = useRef(false);
+
+  const { showLocalPushNotification } = usePushNotifications();
 
   const matchFound = isSignedIn ? rawMatchFound : null;
 
@@ -49,6 +52,16 @@ export function MatchFoundProvider({ children }: Props) {
   useEffect(() => {
     function onMatchFound(payload: MatchFoundState) {
       setRawMatchFound(payload);
+
+      if (document.visibilityState !== "visible") {
+        void showLocalPushNotification({
+          title: "Match found",
+          body: "Open FLOW to accept the match.",
+          url: "/",
+          tag: `flow-match-found-${payload?.matchId ?? "active"}`,
+          kind: "match_found",
+        });
+      }
     }
 
     function onMatchState(payload: MatchFoundState) {
@@ -76,7 +89,7 @@ export function MatchFoundProvider({ children }: Props) {
       socket.off("match:cancelled", onMatchCancelled);
       socket.off("match:ready", onMatchReady);
     };
-  }, [socket]);
+  }, [socket, showLocalPushNotification]);
 
   const acceptMatch = useCallback(() => {
     if (!matchFound) return;

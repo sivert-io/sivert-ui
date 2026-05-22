@@ -5,11 +5,13 @@ import { useAuth } from "../auth/useAuth";
 import { API_BASE_URL } from "../lib/api";
 import { NotificationsContext } from "./NotificationsContext";
 import type { Notification } from "./types";
+import { usePushNotifications } from "../push";
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { socket, isConnected } = useSocket();
   const { isSignedIn, isLoading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { showLocalPushNotification } = usePushNotifications();
 
   const inviteAudioRef = useRef<HTMLAudioElement | null>(null);
   const inviteAudioReadyRef = useRef(false);
@@ -106,6 +108,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      if (
+        payload.type === "lobby_invite" &&
+        document.visibilityState !== "visible"
+      ) {
+        void showLocalPushNotification({
+          title: payload.title,
+          body: payload.body,
+          url: "/",
+          tag: `flow-lobby-invite-${payload.id}`,
+          kind: "lobby_invite",
+        });
+      }
+
       toast(payload.title, {
         description: payload.body,
       });
@@ -123,7 +138,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       socket.off("notification:new", onNotification);
       socket.off("notification:deleted", onNotificationDeleted);
     };
-  }, [socket]);
+  }, [socket, showLocalPushNotification]);
 
   async function deleteNotification(id: string) {
     try {

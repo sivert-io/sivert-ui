@@ -22,6 +22,10 @@ const envSchema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().default(30),
 
   GEO_IP_LOOKUP_TIMEOUT_MS: z.coerce.number().default(2500),
+
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default("mailto:admin@localhost"),
 });
 
 export const config = envSchema.parse(process.env);

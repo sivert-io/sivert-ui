@@ -5,6 +5,7 @@ import {
   MdLogout,
   MdNotifications,
   MdDns,
+  MdInventory,
 } from "react-icons/md";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
@@ -402,6 +403,14 @@ export function Navbar() {
                 onClick={() => navigate("/shop")}
               >
                 <FaCoins /> 0
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/inventory")}
+              >
+                <MdInventory size={14} />
               </Button>
 
               <HoverDropdown

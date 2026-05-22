@@ -116,6 +116,20 @@ class MatchFoundManager {
     this.lobbyToMatch.delete(state.lobbyId);
   }
 
+  userHasPendingMatch(userId: string) {
+    for (const state of this.matches.values()) {
+      if (state.status !== "pending") {
+        continue;
+      }
+
+      if (state.players.some((player) => player.userId === userId)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   serialize(state: MatchFoundState) {
     return {
       matchId: state.matchId,
