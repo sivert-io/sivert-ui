@@ -1,6 +1,6 @@
 import { MdInventory } from "react-icons/md";
 import { FaCoins, FaSteam } from "react-icons/fa";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "../Button";
 import { Skeleton } from "../Skeleton";
@@ -16,12 +16,17 @@ import type { NavbarDropdownPlacement } from "./types";
 
 export function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobileNavbar = useIsMobileNavbar();
 
   const { isSignedIn, isLoading, signIn } = useAuth();
   const { queueState, queueElapsedLabel } = useLobby();
 
   const isInQueue = !!queueState?.isSearching;
+
+  const isHomeRoute = location.pathname === "/";
+  const isShopRoute = location.pathname.startsWith("/shop");
+  const isInventoryRoute = location.pathname.startsWith("/inventory");
 
   const dropdownPlacement: NavbarDropdownPlacement = isMobileNavbar
     ? "top-right"
@@ -56,6 +61,7 @@ export function Navbar() {
                   <QueueBadge
                     isSearching={isInQueue}
                     elapsedLabel={queueElapsedLabel}
+                    className={`px-3 ${isHomeRoute ? "text-secondary" : ""}`}
                     onClick={() => navigate("/")}
                   />
                 </motion.div>
@@ -67,7 +73,11 @@ export function Navbar() {
                   exit={{ opacity: 0, y: -16 }}
                   transition={springTransition}
                 >
-                  <Button href="/" variant="ghost" className="px-3">
+                  <Button
+                    href="/"
+                    variant="ghost"
+                    className={`px-3 ${isHomeRoute ? "text-secondary" : ""}`}
+                  >
                     <Logo solid className="h-4" />
                   </Button>
                 </motion.div>
@@ -91,7 +101,11 @@ export function Navbar() {
             </Button>
           ) : (
             <div className="flex items-center gap-1">
-              <Button variant="ghost" onClick={() => navigate("/shop")}>
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/shop")}
+                className={isShopRoute ? "text-secondary" : ""}
+              >
                 <FaCoins /> 0
               </Button>
 
@@ -99,6 +113,7 @@ export function Navbar() {
                 variant="ghost"
                 aria-label="Open inventory"
                 onClick={() => navigate("/inventory")}
+                className={isInventoryRoute ? "text-secondary" : ""}
               >
                 <MdInventory size={18} />
               </Button>

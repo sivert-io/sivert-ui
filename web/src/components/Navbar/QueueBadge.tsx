@@ -1,6 +1,9 @@
+import { MdSearch } from "react-icons/md";
+
 interface QueueBadgeProps {
   isSearching: boolean;
   elapsedLabel: string | null;
+  className?: string;
   onClick: () => void;
 }
 
@@ -8,6 +11,7 @@ export function QueueBadge({
   isSearching,
   elapsedLabel,
   onClick,
+  className,
 }: QueueBadgeProps) {
   if (!isSearching) return null;
 
@@ -15,12 +19,11 @@ export function QueueBadge({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-10 items-center gap-2 rounded-full border border-secondary/20 bg-secondary/10 px-3.5 py-2 text-sm font-semibold text-secondary transition hover:border-secondary/35 hover:bg-secondary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
+      className={`flex items-center justify-center gap-1 text-sm font-bold ${className || ""}`}
       title="Open lobby"
     >
-      <span className="tabular-nums text-foreground">
-        {elapsedLabel ?? "0:00"}
-      </span>
+      <MdSearch size={16} />
+      {elapsedLabel ?? "0:00"}
     </button>
   );
 }
