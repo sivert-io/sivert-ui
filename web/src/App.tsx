@@ -24,6 +24,8 @@ import { PrivacyPolicyView } from "./views/PrivacyPolicyView";
 import { NotFoundView } from "./views/NotFoundView";
 import { ShopView } from "./views/ShopView";
 import { PushNotificationsProvider } from "./push";
+import { InstallAppBanner, InstallAppProvider } from "./pwa";
+import { useMediaQuery } from "./hooks/useMediaQuery";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -149,35 +151,41 @@ function AnimatedRoutes() {
 }
 
 export function App() {
+  const isMobile = useMediaQuery("(max-width: 767px)");
+
   return (
     <BrowserRouter>
       <AuthProvider>
-        <PushNotificationsProvider>
-          <SocketProvider>
-            <NotificationsProvider>
-              <MatchFoundProvider>
-                <LobbyProvider>
-                  <div className="min-h-screen bg-background text-primary">
-                    <ScrollToTop />
-                    <Navbar />
+        <InstallAppProvider>
+          <PushNotificationsProvider>
+            <SocketProvider>
+              <NotificationsProvider>
+                <MatchFoundProvider>
+                  <LobbyProvider>
+                    <div className="min-h-screen bg-background text-primary">
+                      <ScrollToTop />
+                      <Navbar />
 
-                    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-20 pb-6 md:px-6">
-                      <AnimatedRoutes />
-                    </main>
+                      <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] md:px-6 md:pb-6 md:pt-20">
+                        <AnimatedRoutes />
+                      </main>
 
-                    <Toaster
-                      richColors
-                      closeButton
-                      toastOptions={{
-                        className: "app-toast",
-                      }}
-                    />
-                  </div>
-                </LobbyProvider>
-              </MatchFoundProvider>
-            </NotificationsProvider>
-          </SocketProvider>
-        </PushNotificationsProvider>
+                      <InstallAppBanner />
+                      <Toaster
+                        richColors
+                        closeButton
+                        position={isMobile ? "top-center" : "bottom-right"}
+                        toastOptions={{
+                          className: "app-toast",
+                        }}
+                      />
+                    </div>
+                  </LobbyProvider>
+                </MatchFoundProvider>
+              </NotificationsProvider>
+            </SocketProvider>
+          </PushNotificationsProvider>
+        </InstallAppProvider>
       </AuthProvider>
     </BrowserRouter>
   );

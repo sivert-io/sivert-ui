@@ -9,7 +9,7 @@ import type {
 import { Link } from "react-router";
 
 const baseStyles =
-  "rounded-full transform-gpu transition-all duration-100 ease-out active:scale-[0.97] disabled:scale-[1] disabled:opacity-50 disabled:cursor-default! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "rounded-full transform-gpu transition-all duration-100 ease-out active:scale-[0.97] disabled:scale-[1] disabled:opacity-50 disabled:!cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
   solid: {
@@ -53,13 +53,13 @@ const styles: Record<ButtonVariant, Record<ButtonColor, string>> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  md: "px-4 py-2 text-sm",
-  sm: "h-8 px-3 text-xs",
+  md: "min-h-11 px-5 py-2.5 text-base",
+  sm: "min-h-10 px-3.5 py-2 text-sm",
 };
 
 const squareSizeStyles: Record<ButtonSize, string> = {
-  md: "size-11 text-sm",
-  sm: "size-8 text-xs",
+  md: "size-11 text-base",
+  sm: "size-10 text-sm",
 };
 
 type NativeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
@@ -75,6 +75,8 @@ export function Button({
   target,
   className = "",
   type = "button",
+  disabled = false,
+  onClick,
   ...props
 }: Props) {
   const classes = cn(
@@ -82,15 +84,38 @@ export function Button({
     baseStyles,
     styles[variant][color],
     square ? squareSizeStyles[size] : sizeStyles[size],
+    disabled && "pointer-events-none opacity-50 !cursor-default",
     className,
   );
 
-  return href ? (
-    <Link className={classes} to={href} target={target}>
-      {children}
-    </Link>
-  ) : (
-    <button className={classes} type={type} {...props}>
+  if (href) {
+    return (
+      <Link
+        className={classes}
+        to={disabled ? "#" : href}
+        target={target}
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : undefined}
+        onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            return;
+          }
+        }}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      className={classes}
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+      {...props}
+    >
       {children}
     </button>
   );

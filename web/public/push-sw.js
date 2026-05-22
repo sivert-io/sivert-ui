@@ -1,5 +1,5 @@
-const DEFAULT_ICON = "/android-chrome-192x192.png";
-const DEFAULT_BADGE = "/favicon-32x32.png";
+const DEFAULT_ICON = "/apple-touch-icon.png";
+const DEFAULT_BADGE = "/apple-touch-icon.png";
 const DEFAULT_URL = "/";
 
 self.addEventListener("install", () => {
@@ -63,7 +63,7 @@ self.addEventListener("notificationclick", (event) => {
           }
         }
 
-        return self.clients.openWindow(targetUrl);
+        return self.clients.openWindow(wantedUrl.href);
       }),
   );
 });

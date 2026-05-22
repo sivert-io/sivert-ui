@@ -76,7 +76,7 @@ export function PlayerCard({
             disabled={disabled || isOffline}
             title={title}
             className={cn(
-              "relative flex h-full w-full flex-col items-center justify-between gap-4 rounded-lg border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
+              "relative flex h-full w-full flex-col items-center justify-center gap-4 rounded-lg border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
               isOffline
                 ? "border-white/10 bg-white/5 text-primary/60 opacity-60 cursor-default!"
                 : "border-primary/25 bg-primary/5 hover:bg-primary/10",

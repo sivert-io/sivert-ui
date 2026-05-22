@@ -38,7 +38,7 @@ export function Dropdown({
       exit={{ ...initial, transition: { duration: 0.2, ease: "easeOut" } }}
       transition={springTransition}
       className={cn(
-        "rounded-2xl border border-primary/20 bg-background p-2 shadow-xl",
+        "rounded-2xl border border-primary/20 bg-background/95 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/85",
         className,
       )}
     >

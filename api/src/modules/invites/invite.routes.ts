@@ -30,6 +30,103 @@ function mergeLobbyStateWithPresence(
 
 const router = Router();
 
+router.get("/:inviteId", requireAuth, async (req, res, next) => {
+  try {
+    const { inviteId } = req.params;
+
+    const inviteResult = await db.query<{
+      id: string;
+      lobby_id: string;
+      status: string;
+      expires_at: string;
+      invited_by_user_id: string;
+      inviter_steam_id: string;
+      inviter_persona_name: string | null;
+      inviter_avatar_small: string | null;
+      inviter_avatar_medium: string | null;
+      inviter_avatar_large: string | null;
+      inviter_rank: number | null;
+      inviter_created_at: string;
+      inviter_role: string;
+      inviter_host_status: string | null;
+      inviter_host_badge_variant: string | null;
+    }>(
+      `
+      SELECT
+        li.id::text AS id,
+        li.lobby_id::text AS lobby_id,
+        CASE
+          WHEN li.status = 'pending' AND li.expires_at <= NOW() THEN 'expired'
+          ELSE li.status
+        END AS status,
+        li.expires_at,
+        li.invited_by_user_id::text AS invited_by_user_id,
+        u.steam_id AS inviter_steam_id,
+        u.persona_name AS inviter_persona_name,
+        u.avatar_small AS inviter_avatar_small,
+        u.avatar_medium AS inviter_avatar_medium,
+        u.avatar_large AS inviter_avatar_large,
+        u.rank AS inviter_rank,
+        u.created_at AS inviter_created_at,
+        u.role AS inviter_role,
+        hp.status AS inviter_host_status,
+        hp.badge_variant AS inviter_host_badge_variant
+      FROM lobby_invites li
+      INNER JOIN users u ON u.id = li.invited_by_user_id
+      LEFT JOIN host_profiles hp ON hp.user_id = u.id
+      WHERE li.id = $1
+        AND li.invited_user_id = $2
+      LIMIT 1
+      `,
+      [inviteId, req.user!.id],
+    );
+
+    const invite = inviteResult.rows[0];
+
+    if (!invite) {
+      return res.status(404).json({ error: "Invite not found" });
+    }
+
+    if (invite.status === "expired") {
+      await db.query(
+        `
+        UPDATE lobby_invites
+        SET status = 'expired',
+            responded_at = COALESCE(responded_at, NOW())
+        WHERE id = $1
+          AND status = 'pending'
+          AND expires_at <= NOW()
+        `,
+        [inviteId],
+      );
+    }
+
+    return res.status(200).json({
+      invite: {
+        id: invite.id,
+        lobbyId: invite.lobby_id,
+        status: invite.status,
+        expiresAt: invite.expires_at,
+        inviter: {
+          userId: invite.invited_by_user_id,
+          steamId: invite.inviter_steam_id,
+          personaName: invite.inviter_persona_name,
+          avatarSmall: invite.inviter_avatar_small,
+          avatarMedium: invite.inviter_avatar_medium,
+          avatarLarge: invite.inviter_avatar_large,
+          rank: invite.inviter_rank,
+          createdAt: invite.inviter_created_at,
+          role: invite.inviter_role,
+          hostStatus: invite.inviter_host_status,
+          hostBadgeVariant: invite.inviter_host_badge_variant,
+        },
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/:inviteId/accept", requireAuth, async (req, res, next) => {
   const client = await db.connect();
 
@@ -549,7 +646,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       kind: "lobby_invite",
       title: notification.title,
       body: notification.body ?? undefined,
-      url: "/",
+      url: `/?inviteId=${encodeURIComponent(inviteId)}&inviteAction=1`,
       tag: `flow-lobby-invite-${inviteId}`,
       data: {
         inviteId,

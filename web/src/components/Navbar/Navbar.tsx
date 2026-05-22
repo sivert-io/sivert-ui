@@ -7,7 +7,7 @@ import {
   MdDns,
   MdInventory,
 } from "react-icons/md";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../Button";
 import { useAuth } from "../../auth/useAuth";
@@ -23,6 +23,27 @@ import { API_BASE_URL } from "../../lib/api";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { springTransition } from "../../lib/transitions";
+
+function useIsMobileNavbar() {
+  const [isMobileNavbar, setIsMobileNavbar] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    function handleChange() {
+      setIsMobileNavbar(mediaQuery.matches);
+    }
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  return isMobileNavbar;
+}
 
 function DropdownLink({
   to,
@@ -40,10 +61,10 @@ function DropdownLink({
       underline={false}
       to={to}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm whitespace-nowrap transition hover:bg-white/10"
+      className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm whitespace-nowrap transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
-      {icon}
-      {children}
+      <span className="grid size-5 place-items-center">{icon}</span>
+      <span>{children}</span>
     </Link>
   );
 }
@@ -127,10 +148,9 @@ function QueueBadge({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary transition hover:border-secondary/35 hover:bg-secondary/15"
+      className="inline-flex min-h-10 items-center gap-2 rounded-full border border-secondary/20 bg-secondary/10 px-3.5 py-2 text-sm font-semibold text-secondary transition hover:border-secondary/35 hover:bg-secondary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
       title="Open lobby"
     >
-      <span>Searching</span>
       <span className="tabular-nums text-foreground">
         {elapsedLabel ?? "0:00"}
       </span>
@@ -140,12 +160,15 @@ function QueueBadge({
 
 export function Navbar() {
   const navigate = useNavigate();
+  const isMobileNavbar = useIsMobileNavbar();
+
   const { user, isSignedIn, isLoading, signIn, signOut } = useAuth();
   const { notifications, markAsRead, clearNotifications, deleteNotification } =
     useNotifications();
   const { queueState, queueElapsedLabel } = useLobby();
 
   const isInQueue = !!queueState?.isSearching;
+  const dropdownPlacement = isMobileNavbar ? "top-right" : "bottom-right";
 
   const visibleNotifications = useMemo(
     () =>
@@ -361,16 +384,22 @@ export function Navbar() {
   }
 
   return (
-    <div className="fixed top-0 right-0 left-0 z-300 grid w-full place-items-center p-3">
+    <div
+      className={`fixed right-0 bottom-0 left-0 z-[300] bg-background border-t ${isInQueue ? "border-secondary" : "border-border"} md:border-0 md:bg-transparent grid w-full place-items-center px-3 pt-3 pb-12 md:top-0 md:bottom-auto md:p-3`}
+    >
       <motion.div
-        className={`relative w-full`}
+        className="relative w-full"
         animate={{ maxWidth: isInQueue ? 672 : 576 }}
         transition={springTransition}
       >
-        <nav className="flex items-center justify-between rounded-full border border-primary/20 bg-black/10 p-1.5 backdrop-blur-sm">
-          <div className="flex items-center gap-1">
+        <nav
+          className={`flex items-center justify-between rounded-full md:border ${
+            isInQueue ? "border-secondary" : "border-primary/20"
+          } md:bg-background/70 md:p-1.5 md:backdrop-blur-xl md:supports-[backdrop-filter]:bg-background/50`}
+        >
+          <div className="flex min-w-0 items-center gap-1">
             <Button href="/" variant="ghost" size="sm" className="px-3">
-              <Logo solid className="h-3.5" />
+              <Logo solid className="h-4" />
             </Button>
 
             <QueueBadge
@@ -381,8 +410,8 @@ export function Navbar() {
           </div>
 
           {isLoading ? (
-            <div className="flex items-center gap-2 rounded-full px-3 py-1.5">
-              <Skeleton circle className="h-5 w-5" />
+            <div className="flex min-h-10 items-center gap-2 rounded-full px-3 py-1.5">
+              <Skeleton circle className="h-6 w-6" />
               <Skeleton className="h-3.5 w-16 rounded-full" />
             </div>
           ) : !isSignedIn ? (
@@ -406,26 +435,30 @@ export function Navbar() {
               </Button>
 
               <Button
+                square
                 variant="ghost"
                 size="sm"
+                aria-label="Open inventory"
                 onClick={() => navigate("/inventory")}
               >
-                <MdInventory size={14} />
+                <MdInventory size={18} />
               </Button>
 
               <HoverDropdown
-                placement="bottom-right"
+                placement={dropdownPlacement}
                 dropdownClassName="w-[min(18rem,calc(100vw-1rem))]"
                 trigger={
                   <Button
-                    className="relative h-8! w-8! p-0!"
+                    square
+                    className="relative"
                     variant="ghost"
                     size="sm"
+                    aria-label="Open notifications"
                   >
-                    <MdNotifications size={18} />
+                    <MdNotifications size={20} />
 
                     {unreadCount > 0 ? (
-                      <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-secondary px-1 text-[10px] font-bold text-background">
+                      <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-secondary px-1 text-[11px] font-bold text-background">
                         {unreadCount}
                       </span>
                     ) : null}
@@ -433,7 +466,7 @@ export function Navbar() {
                 }
               >
                 <div className="flex min-w-0 flex-col">
-                  <div className="flex items-center justify-between px-3 py-2">
+                  <div className="flex min-h-11 items-center justify-between px-3 py-2">
                     <span className="text-sm font-semibold text-primary">
                       Notifications
                     </span>
@@ -442,7 +475,7 @@ export function Navbar() {
                       <button
                         type="button"
                         onClick={clearNotifications}
-                        className="text-xs text-foreground-muted transition hover:text-primary"
+                        className="min-h-9 rounded-full px-3 text-sm text-foreground-muted transition hover:bg-white/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         data-keep-dropdown-open
                       >
                         Clear
@@ -457,7 +490,7 @@ export function Navbar() {
                       No notifications yet
                     </div>
                   ) : (
-                    <div className="flex max-h-80 flex-col overflow-y-auto">
+                    <div className="flex max-h-[min(20rem,calc(100vh-9rem))] flex-col overflow-y-auto">
                       {visibleNotifications.map((notification, index) => {
                         const isLobbyInvite =
                           notification.type === "lobby_invite";
@@ -493,7 +526,7 @@ export function Navbar() {
                                 <Link
                                   to={`/profile/${senderSteamId}`}
                                   underline={false}
-                                  className="text-xs text-info transition hover:opacity-80"
+                                  className="inline-flex min-h-9 items-center rounded-full px-3 text-sm text-info transition hover:bg-info/10 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info"
                                 >
                                   View profile
                                 </Link>
@@ -560,45 +593,44 @@ export function Navbar() {
               </HoverDropdown>
 
               <HoverDropdown
-                placement="bottom-right"
+                placement={dropdownPlacement}
                 dropdownClassName="w-[min(14rem,calc(100vw-1rem))]"
                 trigger={
-                  <Button square variant="ghost" size="sm">
-                    <>
-                      {user?.avatarSmall ? (
-                        <img
-                          src={user.avatarSmall}
-                          alt={user.personaName ?? "User avatar"}
-                          className="h-5 w-5 rounded-full"
-                        />
-                      ) : null}
-
-                      {/* <span className="max-w-28 truncate text-xs">
-                        {user?.personaName ?? "Account"}
-                      </span> */}
-                    </>
+                  <Button
+                    square
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Open account menu"
+                  >
+                    {user?.avatarSmall ? (
+                      <img
+                        src={user.avatarSmall}
+                        alt={user.personaName ?? "User avatar"}
+                        className="size-6 rounded-full"
+                      />
+                    ) : null}
                   </Button>
                 }
               >
                 <DropdownLink
                   to={user?.steamId ? `/profile/${user.steamId}` : "/profile"}
-                  icon={<MdBadge size={16} />}
+                  icon={<MdBadge size={18} />}
                 >
                   My profile
                 </DropdownLink>
 
-                <DropdownLink to="/settings" icon={<MdSettings size={16} />}>
+                <DropdownLink to="/settings" icon={<MdSettings size={18} />}>
                   Settings
                 </DropdownLink>
 
                 <Divider className="border-primary/20" />
 
                 {!user?.hostStatus ? (
-                  <DropdownLink to="/host" icon={<MdDns size={16} />}>
+                  <DropdownLink to="/host" icon={<MdDns size={18} />}>
                     Host a server
                   </DropdownLink>
                 ) : (
-                  <DropdownLink to="/servers" icon={<MdDns size={16} />}>
+                  <DropdownLink to="/servers" icon={<MdDns size={18} />}>
                     My servers
                   </DropdownLink>
                 )}
@@ -607,10 +639,10 @@ export function Navbar() {
 
                 <button
                   onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-danger transition hover:bg-danger/10"
+                  className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                 >
-                  <span>
-                    <MdLogout size={16} />
+                  <span className="grid size-5 place-items-center">
+                    <MdLogout size={18} />
                   </span>
                   <span>Sign out</span>
                 </button>

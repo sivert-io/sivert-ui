@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Card } from "../components/Card";
 import { Lobby } from "../components/Lobby/Lobby";
+import { LobbyInviteResponseModal } from "../components/Lobby/LobbyInviteResponseModal";
 import { useAuth } from "../auth/useAuth";
 import { LandingView } from "./LandingView";
 import { motion } from "motion/react";
@@ -41,9 +42,13 @@ export function FrontPageView() {
 
   if (user) {
     return (
-      <Card>
-        <Lobby />
-      </Card>
+      <>
+        <Card>
+          <Lobby />
+        </Card>
+
+        <LobbyInviteResponseModal />
+      </>
     );
   }
 

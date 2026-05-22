@@ -5,6 +5,7 @@ import { Link } from "../components/Link";
 import { Button } from "../components/Button";
 import { usePushNotifications } from "../push";
 import { toast } from "sonner";
+import { useInstallApp } from "../pwa";
 
 export function SettingsView() {
   const {
@@ -17,6 +18,9 @@ export function SettingsView() {
     disablePushNotifications,
     sendTestNotification,
   } = usePushNotifications();
+
+  const { isInstalled, isIos, canPromptInstall, promptInstall } =
+    useInstallApp();
 
   const pushStatus = !isSupported
     ? "Unsupported"
@@ -35,6 +39,19 @@ export function SettingsView() {
         testError instanceof Error
           ? testError.message
           : "Failed to send test notification",
+      );
+    }
+  }
+
+  async function handleInstallApp() {
+    try {
+      await promptInstall();
+    } catch (installError) {
+      console.error(installError);
+      toast(
+        installError instanceof Error
+          ? installError.message
+          : "Failed to install FLOW",
       );
     }
   }
@@ -87,6 +104,54 @@ export function SettingsView() {
 
         <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-black/10 p-4">
           <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-medium">Install FLOW</h2>
+            <p className="text-sm text-foreground-muted">
+              Install FLOW as an app for a better mobile experience and easier
+              access to push notifications.
+            </p>
+          </div>
+
+          {isInstalled ? (
+            <p className="text-sm font-medium text-primary">
+              FLOW is already installed as an app.
+            </p>
+          ) : isIos ? (
+            <div className="flex flex-col gap-3 text-sm">
+              <p className="text-foreground-muted">
+                On iPhone, FLOW needs to be added to your Home Screen before
+                push notifications can work.
+              </p>
+
+              <ol className="list-inside list-decimal space-y-1 text-foreground-muted">
+                <li>Open FLOW in Safari.</li>
+                <li>Tap the Share button.</li>
+                <li>Choose Add to Home Screen.</li>
+                <li>Open FLOW from the new Home Screen icon.</li>
+                <li>Come back here and enable push notifications.</li>
+              </ol>
+            </div>
+          ) : canPromptInstall ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-foreground-muted">
+                Your browser supports installing FLOW as an app.
+              </p>
+
+              <div>
+                <Button color="primary" onClick={handleInstallApp}>
+                  Install app
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-foreground-muted">
+              If your browser supports installation, use the install icon in the
+              address bar or browser menu.
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-black/10 p-4">
+          <div className="flex flex-col gap-1">
             <h2 className="text-lg font-medium">Push Notifications</h2>
             <p className="text-sm text-foreground-muted">
               Receive notifications for match found and lobby invites on this
@@ -107,7 +172,14 @@ export function SettingsView() {
               </p>
             ) : null}
 
-            {!isSupported ? (
+            {!isSupported && isIos ? (
+              <p className="text-warning">
+                On iPhone, push notifications only work after FLOW has been
+                added to your Home Screen and opened from the Home Screen icon.
+              </p>
+            ) : null}
+
+            {!isSupported && !isIos ? (
               <p className="text-warning">
                 This browser does not support web push notifications.
               </p>

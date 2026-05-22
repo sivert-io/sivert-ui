@@ -114,8 +114,14 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
     };
   }, [socket]);
 
+  function isInviteDisabled(status: FriendInviteStatus) {
+    return (
+      status === "invited" || status === "in_lobby" || status === "in_match"
+    );
+  }
+
   function handleInvite(player: InviteableFriend) {
-    if (player.status !== "available") {
+    if (isInviteDisabled(player.status)) {
       return;
     }
 
@@ -146,7 +152,11 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
           ),
         );
 
-        toast("Invite sent");
+        toast(
+          player.status === "offline"
+            ? "Invite sent. They will receive a push notification if enabled."
+            : "Invite sent",
+        );
       } catch (error) {
         console.error(error);
         toast(error instanceof Error ? error.message : "Failed to send invite");
@@ -163,6 +173,7 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
       case "in_match":
         return "in match";
       case "offline":
+        return "offline";
       case "available":
       default:
         return undefined;
@@ -176,7 +187,7 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
       case "in_lobby":
         return "Already in your lobby";
       case "offline":
-        return "Offline";
+        return "Offline. Invite will be delivered as a push notification if they enabled push.";
       case "in_match":
         return "Currently in a match";
       default:
@@ -204,14 +215,14 @@ export function InviteModal({ open, setOpen }: InviteModalProps) {
         {!hasError && players.length > 0 && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {players.map((player) => {
-              const isDisabled = player.status !== "available";
+              const isDisabled = isInviteDisabled(player.status);
 
               return (
                 <PlayerCard
                   key={player.profile.steamId}
                   playerData={{
                     ...player.profile,
-                    connected: player.status !== "offline",
+                    connected: true,
                   }}
                   onClick={() => handleInvite(player)}
                   disabled={isDisabled}

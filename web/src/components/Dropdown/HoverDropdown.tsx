@@ -15,14 +15,7 @@ import { Dropdown } from "./Dropdown";
 import type { DropdownPlacement } from "./types";
 
 interface HoverDropdownProps {
-  trigger:
-    | React.ReactNode
-    | ((props: {
-        isOpen: boolean;
-        open: () => void;
-        close: () => void;
-        toggle: () => void;
-      }) => React.ReactNode);
+  trigger: React.ReactNode;
   children: React.ReactNode;
   placement?: DropdownPlacement;
   hoverable?: boolean;
@@ -145,7 +138,7 @@ export function HoverDropdown({
     }, closeDelay);
   }, [clearCloseTimeout, closeDelay, isPinned]);
 
-  const toggle = useCallback(() => {
+  const toggleDropdown = useCallback(() => {
     clearCloseTimeout();
 
     setIsPinned((current) => {
@@ -192,23 +185,20 @@ export function HoverDropdown({
 
   function handleTriggerClick(event: React.MouseEvent<HTMLDivElement>) {
     event.preventDefault();
-    toggle();
+    toggleDropdown();
   }
 
-  const triggerContent =
-    typeof trigger === "function"
-      ? trigger({
-          isOpen,
-          open: openDropdown,
-          close: closeDropdown,
-          toggle,
-        })
-      : trigger;
+  function handleTriggerKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    toggleDropdown();
+  }
 
   return (
     <div
       ref={rootRef}
-      className={cn("relative z-350 inline-flex", className)}
+      className={cn("relative z-[350] inline-flex", className)}
       onMouseEnter={hoverable ? openDropdown : undefined}
       onMouseLeave={hoverable ? scheduleClose : undefined}
     >
@@ -216,15 +206,16 @@ export function HoverDropdown({
         ref={setReference}
         className="inline-flex"
         onClick={handleTriggerClick}
+        onKeyDown={handleTriggerKeyDown}
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        {triggerContent}
+        {trigger}
       </div>
 
       <AnimatePresence>
         {isOpen ? (
-          <div ref={setFloating} style={floatingStyles} className="z-400">
+          <div ref={setFloating} style={floatingStyles} className="z-[400]">
             <Dropdown placement={placement} className={dropdownClassName}>
               <div onClick={handleContentClick}>{children}</div>
             </Dropdown>
@@ -234,3 +225,5 @@ export function HoverDropdown({
     </div>
   );
 }
+
+export default HoverDropdown;

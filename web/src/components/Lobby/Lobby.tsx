@@ -1,5 +1,4 @@
 import type React from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { MdClose, MdOutlineDoorBack } from "react-icons/md";
@@ -7,11 +6,9 @@ import { toast } from "sonner";
 import { useLobby } from "../../hooks/useLobby";
 import { PlayerCard } from "../PlayerCard";
 import { InviteModal } from "./InviteModal";
-import { Spinner } from "../Spinner";
 import { Button } from "../Button";
 import { API_BASE_URL } from "../../lib/api";
 import { Tooltip } from "../Tooltip";
-import { springTransition } from "../../lib/transitions";
 
 function formatOfflineDuration(disconnectedAt?: number | null) {
   if (!disconnectedAt) return "Offline";
@@ -32,10 +29,12 @@ function KickablePlayerCard({
   children,
   onKick,
   playerName,
+  disabled = false,
 }: {
   children: React.ReactNode;
   onKick: () => void;
   playerName?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="relative">
@@ -50,9 +49,13 @@ function KickablePlayerCard({
           size="sm"
           variant="ghost"
           color="danger"
+          disabled={disabled}
           aria-label={`Kick ${playerName ?? "player"} from lobby`}
           onClick={(e) => {
             e.stopPropagation();
+
+            if (disabled) return;
+
             onKick();
           }}
         >
@@ -93,7 +96,6 @@ export function Lobby() {
     lobbyId,
     players,
     queueState,
-    queueElapsedLabel,
     startQueue,
     stopQueue,
     kickMember,
@@ -127,6 +129,7 @@ export function Lobby() {
         }
       } catch (error) {
         console.error(error);
+
         if (!cancelled) {
           toast("Failed to load lobby");
         }
@@ -155,14 +158,22 @@ export function Lobby() {
     }
   }, [lobbyId, queueState]);
 
+  const playerCount = useMemo(() => players.filter(Boolean).length, [players]);
+
   const isQueueKnown = !!lobbyId && isQueueHydrated;
   const isInQueue = isQueueKnown && !!queueState?.isSearching;
-  const disableQueueActions =
-    isLobbyLoading ||
-    !lobbyId ||
-    !isQueueKnown ||
-    isQueueMutating ||
-    isLeavingLobby;
+
+  const isLobbyBusy = isLobbyLoading || isQueueMutating || isLeavingLobby;
+
+  const disableMatchmaking = isLobbyBusy || !lobbyId || !isQueueKnown;
+
+  const disableInvite =
+    isLobbyBusy || !lobbyId || isInQueue || playerCount >= players.length;
+
+  const disableLeaveLobby =
+    isLobbyBusy || !lobbyId || isInQueue || playerCount === 1;
+
+  const disableKick = isLobbyBusy || !lobbyId || isInQueue || !isLobbyOwner;
 
   const hasOfflinePlayers = useMemo(
     () => players.some((player) => player && player.connected === false),
@@ -180,7 +191,7 @@ export function Lobby() {
   }, [hasOfflinePlayers]);
 
   async function handleToggleQueue() {
-    if (!lobbyId || disableQueueActions) return;
+    if (!lobbyId || disableMatchmaking) return;
 
     try {
       setIsQueueMutating(true);
@@ -193,6 +204,7 @@ export function Lobby() {
       await startQueue();
     } catch (error) {
       console.error(error);
+
       toast(
         isInQueue ? "Failed to stop searching" : "Failed to start searching",
       );
@@ -202,7 +214,8 @@ export function Lobby() {
   }
 
   function openInviteModal() {
-    if (!lobbyId || disableQueueActions || isInQueue) return;
+    if (disableInvite) return;
+
     setShowInviteModal(true);
   }
 
@@ -213,19 +226,20 @@ export function Lobby() {
   async function handleKickFromLobby(
     player: NonNullable<(typeof players)[number]>,
   ) {
-    if (!lobbyId || !player.userId || isInQueue || !isLobbyOwner) return;
+    if (!player.userId || disableKick) return;
 
     try {
       await kickMember(player.userId);
       toast(`${player.personaName ?? "Player"} was kicked from the lobby`);
     } catch (error) {
       console.error(error);
+
       toast(error instanceof Error ? error.message : "Failed to kick player");
     }
   }
 
   async function handleLeaveLobby() {
-    if (!lobbyId || disableQueueActions || isInQueue) return;
+    if (disableLeaveLobby) return;
 
     try {
       setIsLeavingLobby(true);
@@ -246,6 +260,7 @@ export function Lobby() {
       toast("You left the lobby");
     } catch (error) {
       console.error(error);
+
       toast(error instanceof Error ? error.message : "Failed to leave lobby");
     } finally {
       setIsLeavingLobby(false);
@@ -256,9 +271,11 @@ export function Lobby() {
     player: (typeof players)[number] | null | undefined,
   ) {
     if (!player) return undefined;
+
     if (player.connected === false) {
       return formatOfflineDuration(player.disconnectedAt);
     }
+
     return "Online";
   }
 
@@ -279,7 +296,7 @@ export function Lobby() {
         <PlayerCard
           playerData={null}
           onClick={openInviteModal}
-          disableInvite={disableQueueActions || isInQueue}
+          disableInvite={disableInvite}
           scale={scale}
           width={width}
           height={height}
@@ -301,19 +318,14 @@ export function Lobby() {
       />
     );
 
-    if (
-      isInQueue ||
-      !isQueueKnown ||
-      isQueueMutating ||
-      isOurselves ||
-      !isLobbyOwner
-    ) {
+    if (isOurselves || !isLobbyOwner) {
       return playerCard;
     }
 
     return (
       <KickablePlayerCard
         playerName={player.personaName ?? undefined}
+        disabled={disableKick}
         onKick={() => void handleKickFromLobby(player)}
       >
         {playerCard}
@@ -322,7 +334,7 @@ export function Lobby() {
   }
 
   return (
-    <div className="relative flex w-full flex-col items-center gap-4">
+    <div className="flex w-full flex-col items-center gap-4 relative">
       {/* Desktop */}
       <div className="hidden w-full items-center justify-center gap-2 md:flex">
         {renderPlayerSlot(players[3], {
@@ -330,22 +342,26 @@ export function Lobby() {
           width: 160,
           height: 200,
         })}
+
         {renderPlayerSlot(players[1], {
           scale: 0.8,
           width: 160,
           height: 200,
         })}
+
         {renderPlayerSlot(players[0], {
           scale: 1,
           isOurselves: true,
           width: 160,
           height: 200,
         })}
+
         {renderPlayerSlot(players[2], {
           scale: 0.8,
           width: 160,
           height: 200,
         })}
+
         {renderPlayerSlot(players[4], {
           scale: 0.6,
           width: 160,
@@ -372,6 +388,7 @@ export function Lobby() {
               className: "w-full",
             })}
           </div>
+
           <div className="w-full">
             {renderPlayerSlot(players[2], {
               width: "100%",
@@ -379,6 +396,7 @@ export function Lobby() {
               className: "w-full",
             })}
           </div>
+
           <div className="w-full">
             {renderPlayerSlot(players[3], {
               width: "100%",
@@ -386,6 +404,7 @@ export function Lobby() {
               className: "w-full",
             })}
           </div>
+
           <div className="w-full">
             {renderPlayerSlot(players[4], {
               width: "100%",
@@ -396,64 +415,29 @@ export function Lobby() {
         </div>
       </div>
 
-      <div className="relative z-10 flex w-full flex-col items-center gap-4">
-        <AnimatePresence mode="sync" initial={false}>
-          {isInQueue && (
-            <motion.div
-              key="queue-status"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={springTransition}
-              className="absolute flex flex-col items-center gap-3"
-            >
-              <Spinner size={64} easing="snappy" duration={2} mode="fill" />
+      <Button
+        onClick={handleToggleQueue}
+        variant={isInQueue ? "outline" : "solid"}
+        color={isInQueue ? "danger" : "primary"}
+        disabled={disableMatchmaking}
+      >
+        {isInQueue ? "Stop searching" : "Find match"}
+      </Button>
 
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-xs font-bold">You are in queue</p>
-                <p className="text-sm tabular-nums">{queueElapsedLabel}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <motion.div
-          className="relative flex flex-col items-center justify-end gap-2"
-          initial={{ height: 36 }}
-          animate={{ height: isInQueue ? 170 : 36 }}
-          transition={springTransition}
-        >
-          <div className="relative">
-            <Button
-              onClick={handleToggleQueue}
-              variant={isInQueue ? "outline" : "solid"}
-              color={isInQueue ? "danger" : "primary"}
-              disabled={disableQueueActions}
-            >
-              {isInQueue ? "Stop searching" : "Find match"}
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-
-      {!isInQueue && players.filter(Boolean).length > 1 && (
-        <Tooltip
-          wrapperClassName="absolute -top-4 -right-4 z-20"
-          content="Leave lobby"
-          placement="left-center"
-        >
+      <div className="absolute bottom-0 right-0 md:-top-2 md:-right-2">
+        <Tooltip content="Leave lobby" placement="left-center">
           <Button
             onClick={handleLeaveLobby}
             square
             size="sm"
             variant="ghost"
             color="danger"
-            disabled={disableQueueActions}
+            disabled={disableLeaveLobby}
           >
             <MdOutlineDoorBack />
           </Button>
         </Tooltip>
-      )}
+      </div>
 
       <InviteModal open={showInviteModal} setOpen={setShowInviteModal} />
     </div>

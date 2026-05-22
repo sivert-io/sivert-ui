@@ -172,3 +172,7 @@ button {
   color: var(--color-info) !important;
   border: 1px solid color-mix(in srgb, var(--color-info) 22%, transparent) !important;
 }
+
+[data-sonner-toaster][data-y-position="top"] {
+  top: calc(1rem + env(safe-area-inset-top)) !important;
+}
